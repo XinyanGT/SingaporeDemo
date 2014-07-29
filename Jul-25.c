@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
   int okflag, nexact, nfuzzy;
   double total_build_time = 0;
   double total_query_time = 0;
+  yandex_query_type type = YANDEX_NOT_IN;
 
   // Deal with data step by step
   for (i = 0; i < steps; i++) {
@@ -100,14 +101,14 @@ int main(int argc, char **argv) {
       
       // Query
       stimer_start();
-      yandex_query(low, high, result, &count);
+      yandex_query(low, high, result, &count, type);
       stimer_stop();
       total_query_time += stimer_get_interval();
 	
       // Print buckets
-      //      buckets_print();
+      /* buckets_print(); */
       // Verify query results
-      okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1);
+      okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1, type);
       assert(okflag);
       // Write
       writer_start(result, count);
@@ -123,6 +124,8 @@ int main(int argc, char **argv) {
   printf("Index building time: %fs. Query time: %fs\n", total_build_time, total_query_time);
   
   // Clear
+  free(chunk);
+  free(data);
   reader_finalize();
   writer_finalize();
   decomp_finalize(idp);

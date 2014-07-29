@@ -9,7 +9,11 @@ void buckets_start();
 
 void buckets_fill_range(int *max, int *min, int size);
 
-void buckets_extract(int low, int high, int *result, int *count);
+void buckets_extract_in(int low, int high, int *result, int *count);
+
+void buckets_extract_not_in(int low, int high, int *result, int *count);
+
+void buckets_extract(int ranges[][2], int nranges, int *result, int *count);
 
 void buckets_finalize();
 

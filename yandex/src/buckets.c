@@ -81,84 +81,128 @@ void buckets_fill_range(int *max, int *min, int size) {
   
 }
 
-// Assume elements in each bucket are ordered increasingly
-// result will be positions ordered increasingly
-void buckets_extract(int low, int high, int *result, int *count) {
-  
-  static int current_size = 0;  // size for buffer used in merging
-  
-  int nelems = 0;
-  int i;
-  
-  if (low > s_nbuckets-1 || high < 0) {
+void buckets_extract_not_in(int low, int high, int *result, int *count) {
+  int ranges[2][2];
+  assert(low <= high);
+  // No elements lower than low or higher than high
+  if (low < 0 && high > s_nbuckets-1) {
     *count = 0;
     return;
   }
-
-  if (high > s_nbuckets-1) high = s_nbuckets - 1;
-  if (low < 0) low = 0;
-
-  printf("Extract buckets from %d to %d\n", low, high);
-      
-  // Number of elements in those buckets
-  // No greater than effective elements in all buckets so far
-  for (i = low; i <= high; i++) {
-    nelems += s_bucket_nelems[i];
-    if (nelems >= s_effetive_nelems) {
-      nelems = s_effetive_nelems;
-      break;
-    }
-  }
-
-  // Allocate space for buckets merging if necessary
-  int to_alloc = 0;
-  if (current_size == 0) {
-    to_alloc = 1;
-    current_size = 4096;  // init size
-  } else if (current_size < nelems) {
-    to_alloc = 1;
-    do {
-      current_size *= 2;  // increas buffer size exponentially
-    } while (current_size < nelems);
-  }
-  if (to_alloc) {
-    s_a = (int *)realloc(s_a, current_size * sizeof(int));
-    s_b = (int *)realloc(s_b, current_size * sizeof(int));
-  }
-
-  // Just one bucket
-  if (low == high) {
-    memcpy(result, s_buckets[low], s_bucket_nelems[low] * sizeof(int));
-    *count = s_bucket_nelems[low];
-    // Return
+  // No elements lower than low
+  if (low < 0) {
+    ranges[0][0] = high;
+    ranges[0][1] = s_nbuckets-1;
+    buckets_extract(ranges, 1, result, count);
     return;
   }
+  // No elements higher than high
+  if (high > s_nbuckets-1) {
+    ranges[0][0] = 0;
+    ranges[0][1] = low;
+    buckets_extract(ranges, 1, result, count);
+    return;
+  }
+
+  // Otherwise
+  ranges[0][0] = 0;
+  ranges[0][1] = low;
+  ranges[1][0] = high;
+  ranges[1][1] = s_nbuckets - 1;
+  buckets_extract(ranges, 2, result, count);
   
-  // Merge buckets
-  int ia=0, ib=0;
-  int *iap = &ia, *ibp = &ib;
-  int *ap = s_a, *bp = s_b;
+}
 
-  *iap = s_bucket_nelems[low];
-  ap = s_buckets[low];
+void buckets_extract_in(int low, int high, int *result, int *count) {
+  int ranges[1][2];
+  ranges[0][0] = low;
+  ranges[0][1] = high;
+  buckets_extract(ranges, 1, result, count);
+  
+}
 
+// Assume elements in each bucket are ordered increasingly
+// result will be positions ordered increasingly
+// The lower bound of ranges[i] better be strictly greater than the
+// higher bound of ranges[i-1], although still works if not
+// However to each range, higher bound should not be less than lower bound
+void buckets_extract(int ranges[][2], int nranges, int *result, int *count) {
+    
+  static int current_size = 0;  // size for buffer used in merging
+  int high, low;
+  int nelems;
+  int n;
+  int i, r;
+  int to_alloc;
 
-  // Iteratively merge buckets up to i with bucket i+1
-  for (i = low; i < high; i++) {
-    // Last round
-    if (i == high -1) {
-      buckets_merge(ap, *iap, s_buckets[i+1], s_bucket_nelems[i+1], result, count);
-    } else {
-      buckets_merge(ap, *iap, s_buckets[i+1], s_bucket_nelems[i+1], bp, ibp);
-      // Swap a and b
+  int ia, ib;
+  int *iap, *ibp;
+  int *ap, *bp;
+
+  printf("Extract buckets from %d ranges\n", nranges);
+
+  if (current_size == 0) {
+    current_size = 4096;   // initial local buffer size
+    s_a = (int *) malloc(current_size * sizeof(int));
+    s_b = (int *) malloc(current_size * sizeof(int));
+  }
+  ia = ib = 0;
+  iap = &ia;
+  ibp = &ib;
+  ap = s_a;
+  bp = s_b;
+  
+  for (r = 0; r < nranges; r++) {
+    low = ranges[r][0];
+    high = ranges[r][1];
+    assert(low <= high);
+    // No elements fall in this range, nothing to merge
+    if (low > s_nbuckets-1 || high < 0) {
+      continue;
+    }
+    if (high > s_nbuckets-1) high = s_nbuckets - 1;
+    if (low < 0) low = 0;
+    printf("[%d]Extract buckets from %d to %d\n", r, low, high);
+    
+    // Number of elements in those buckets
+    // No greater than effective elements in all buckets so far
+    n = 0;
+    for (i = low; i <= high; i++) {
+      n += s_bucket_nelems[i];
+      if (n >= s_effetive_nelems) {
+	n = s_effetive_nelems;
+	break;
+      }
+    }
+
+    // Allocate space for buckets merging if necessary
+    to_alloc = 0;
+    if (current_size < n) {
+      to_alloc = 1;
+      do {
+	current_size *= 2;  // increase buffer size exponentially
+      } while (current_size < n);
+    }
+    if (to_alloc) {
+      s_a = (int *)realloc(s_a, current_size * sizeof(int));
+      s_b = (int *)realloc(s_b, current_size * sizeof(int));
+    }
+
+    // Iteratively merge bucket i with previous merged buckets
+    for (i = low; i <= high; i++) {
+      buckets_merge(ap, *iap, s_buckets[i], s_bucket_nelems[i], bp, ibp);
+      // Swap a and b pointers, so that a pointers correspond to previous merged buckets
       ap = (bp == s_b) ? s_b : s_a;
       bp = (bp == s_b) ? s_a : s_b;
       iap = (ibp == &ib) ? &ib : &ia;
       ibp = (ibp == &ib) ? &ia : &ib;
     }
   }
+  *count = *iap;
+  memcpy(result, ap, *iap * sizeof(int));
 }
 
+  		     
 // Merge bucket a and bucket b to bucket c
 // Get rid of replicated elements 
 void buckets_merge(int *bucket_a, int size_a, int *bucket_b, int size_b, int *bucket_c, int *size) {

@@ -20,6 +20,7 @@ static int *s_chunk_range_dc[2];
 static retriever_t *s_rp;
 static decomp_t *s_dp;
 static int s_first_step;
+static double *s_verify_data;
 
 
 // Compute min max for a step of data
@@ -114,7 +115,8 @@ void yandex_update() {
 }
 
 
-void yandex_query(double low_bound, double high_bound, int *query_result, int *count) {
+void yandex_query(double low_bound, double high_bound, int *query_result, int *count, yandex_query_type type) {
+
   int low_dc;
   int high_dc;
 
@@ -124,14 +126,21 @@ void yandex_query(double low_bound, double high_bound, int *query_result, int *c
   high_dc = quantizer_quantize_singleton(high_bound);
 
   //  printf("low: %d, high: %d\n", low_dc, high_dc);
-  buckets_extract(low_dc, high_dc, query_result, count);		  
+  switch (type) {
+  case YANDEX_IN:    
+    buckets_extract_in(low_dc, high_dc, query_result, count);
+    break;
+  case YANDEX_NOT_IN:
+    buckets_extract_not_in(low_dc, high_dc, query_result, count);
+    break;
+  }
 }
-
+    
 
 /*
  * Verify whether yandex query result is valid
  */
-int yandex_verify(double low_bound, double high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint) {
+int yandex_verify(double low_bound, double high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type) {
   
   // hit: the chunk contains value in the range
   // has: the chunk number appears in query result
@@ -139,14 +148,17 @@ int yandex_verify(double low_bound, double high_bound, int *query_result, int co
   // nrough: number of data may be in that range
   // chunksize: time X row X col
 
-  double *data = (double *) malloc(s_dp->max_chunksize * s_rp->period * sizeof(double));
+  double *data;
   int i, j;
   int chunksize, nexact, nrough;
   int hitflag, okflag, hasflag;
   int nchunks = s_dp->nchunks;
   nexact = nrough = 0;
   okflag = 1;
-  
+  if (s_verify_data == NULL) {
+    s_verify_data = (double *) malloc(s_dp->max_chunksize * s_rp->period * sizeof(double));
+  }
+  data = s_verify_data;
 
   // Go over all data chunk by chunk
   for (i = 0; i < nchunks; i++) {
@@ -156,9 +168,18 @@ int yandex_verify(double low_bound, double high_bound, int *query_result, int co
     
     // Go over every data point
     for (j = 0; j < chunksize; j++) {
-      if (data[j] >= low_bound && data[j] <= high_bound) {
-	nexact++;
-	hitflag = 1;
+      switch (type) {
+      case YANDEX_IN:
+	if (data[j] >= low_bound && data[j] <= high_bound) {
+	  nexact++;
+	  hitflag = 1;
+	}
+	break;
+      case YANDEX_NOT_IN:
+	if (data[j] <= low_bound || data[j] >= high_bound) {
+ 	  nexact++;
+	  hitflag = 1;
+	}
       }
     }
     
@@ -197,6 +218,7 @@ int yandex_verify(double low_bound, double high_bound, int *query_result, int co
 
 
 void yandex_finalize() {
+  free(s_verify_data);
   free(s_chunk_range[0]);
   free(s_chunk_range_dc[0]);
   buckets_finalize();

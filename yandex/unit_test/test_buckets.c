@@ -38,14 +38,24 @@ int main(int argc, char **argv) {
 
   // Extract from buckets
   printf("=======================================================\n");
-  printf("Extract from buckets[%d, %d]\n", low, high);
-  buckets_extract(low, high, result, &count);
+  printf("Extract from buckets IN [%d, %d]\n", low, high);
+  buckets_extract_in(low, high, result, &count);
   printf("Result(%d): \n", count);
   for (i = 0; i < count; i++) {
     printf("%d ", result[i]);
   }
   printf("\n");
- 
+
+  printf("=======================================================\n");
+  printf("Extract from buckets NOT IN [%d, %d]\n", low, high);
+  buckets_extract_not_in(low, high, result, &count);
+  printf("Result(%d): \n", count);
+  for (i = 0; i < count; i++) {
+    printf("%d ", result[i]);
+  }
+  printf("\n");
+
+   
   // Clear 
   buckets_finalize();
 

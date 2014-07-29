@@ -1,5 +1,7 @@
 #include "writer.h"
 #include "retriever.h"
+#include "reader.h"
+#include "mpi.h"
 
 void naive_set(int row, int col, double offset_value, double *data) {
   int i,j; 
@@ -13,56 +15,95 @@ void naive_set(int row, int col, double offset_value, double *data) {
 
 int main(int argc, char **argv) {
   
+  /* double data1[row*col], data2[row*col]; */
+  /* double data[row*col]; */
+  /* int period = 1; */
+  
+  /* naive_set(row, col, 0, data1); */
+  /* naive_set(row, col, 1, data2); */
+
+
+    // Parameters
+  assert(argc > 6);
+  char *filename = argv[1];          // name of the bp file to read 
+  char *varname = argv[2];           // name of the variable to read
+  int row_nprocs = atoi(argv[3]);    // decompose one step of data to processes 
+  int col_nprocs = atoi(argv[4]);
+  int row_nchunks = atoi(argv[5]);   // further decompose, a chunk is a unit to compute min and mx
+  int col_nchunks = atoi(argv[6]);
+
+  int period = 1;   // have not implemented adios write temporal aggregated values yet..
+  int steps = 2;    // number of steps to read
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+  int rank;
   MPI_Init(&argc, &argv);
-  
-  int row = 4, col = 6;
-  int row_nchunks = 2, col_nchunks = 2;
-  char *varname = "vol";
-  char *filename = "test.bp";
+  MPI_Comm_rank(comm, &rank);
 
-  double data1[row*col], data2[row*col];
-  double data[row*col];
-  int period = 1;
-  
-  naive_set(row, col, 0, data1);
-  naive_set(row, col, 1, data2);
+  // Decompose by processes, to read different portions of data
+  decomp_t *rdp;
+  rdp = reader_init(filename, varname, row_nprocs, col_nprocs);  // for reader
 
-  decomp_t *dp = decomp_init(row, col, row_nchunks, col_nchunks);
-  retriever_t *rp = retriever_init(dp, period);
+  int row, col, total_steps;
+  int lrow, lcol, orow, ocol;
+  reader_get_dim(&row, &col, &total_steps);
+  printf("[%d]G: %d X %d, total_steps: %d\n", rank, row, col, total_steps);
+  reader_get_dim_local(&lrow, &lcol, &orow, &ocol);
+  printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
-  int i;
-  writer_init(filename, varname, dp);
+  // Further decompose by chunks, for computing max and min to index
+  decomp_t *idp, *wdp;
+  retriever_t *rp;
+
+  idp = decomp_init(lrow, lcol, row_nchunks, col_nchunks);   // for index
+  wdp = decomp_focus(rdp, rank, idp);    // for writer
   
-  int pos[] = {0,3};
-  int count = 2;
+  rp = retriever_init(idp, period);
   
-  writer_start(pos, count);
-  retriever_feed(rp, data1);
+  writer_init("test.bp", "vol", wdp);
   
-    
-  for (i = 0; i < count; i++) {
-    retriever_get_chunk(rp, pos[i], data);
-    writer_write(pos[i], data);
+  double *data = (double *) malloc(lrow * lcol * sizeof(double));
+  double *chunk = (double *) malloc(idp->max_chunksize * period * sizeof(double));
+
+  int i, j;
+  int result[2][idp->nchunks];
+  result[0][0] = 0;
+  result[0][1] = 2;
+  result[1][0] = 1;
+  result[1][1] = 4;
+  int count[2] = { 2, 2};
+
+  // Deal with data step by step
+  for (i = 0; i < steps; i++) {
+
+    // Read data
+    reader_read(data);
+
+    // Store data for later retrieval
+    retriever_feed(rp, data);
+
+    // Last step in a period
+    if ( (i+1) % period == 0) {
+      // Write
+      writer_start(result[i], count[i]);
+      for (j = 0; j < count[i]; j++) {
+	retriever_get_chunk(rp, result[i][j], chunk);
+	writer_write(result[i][j], chunk);
+      }
+      writer_stop();
+    }
   }
 
-
-  writer_stop();
-
   
-  pos[0] = 1;
-  count = 1;
-  writer_start(pos, count);
-  retriever_feed(rp, data2);
-
-  for (i = 0; i < count; i++) {
-    retriever_get_chunk(rp, pos[i], data);
-    writer_write(pos[i], data);
-  }
-
-  writer_stop();
-
-  decomp_finalize(dp);
-  retriever_finalize(rp);
+  // Clear
+  free(chunk);
+  free(data);
+  reader_finalize();
   writer_finalize();
+  decomp_finalize(idp);
+  decomp_finalize(wdp);
+  retriever_finalize(rp);
   MPI_Finalize();
+
+  return 0;
 }

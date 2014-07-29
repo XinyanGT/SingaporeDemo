@@ -3,7 +3,7 @@
 int main() {
 
   int row = 4, col = 6;
-  int nbuckets = 30, bucket_size = 100;
+  int nbuckets = 40, bucket_size = 100;
   int period = 2;
   int i, j;
 
@@ -21,7 +21,7 @@ int main() {
 
   double low = 0, high = 1.0;
   int row_nchunks = 2;
-  int col_nchunks = 3;
+  int col_nchunks = 6;
   int result[row * col];
   int count;
   double data_query[period * col * row];
@@ -48,7 +48,13 @@ int main() {
   yandex_stop();
 
   // Query
-  yandex_query(low, high, result, &count);
+  int chunksize;
+  int okflag, nexact, nfuzzy;
+
+
+  
+  yandex_query(low, high, result, &count, YANDEX_IN);
+  buckets_print();
   
   printf("=======================================================\n");
   printf("Query range: %.2f -- %.2f\n", low, high);
@@ -59,7 +65,7 @@ int main() {
   printf("\n");
 
 
-  int chunksize;
+
   for (i = 0; i < count; i++) {
     
     chunksize = retriever_get_chunk(rp, result[i], chunk);
@@ -71,9 +77,40 @@ int main() {
     printf("\n\n");
   }
 
-  int okflag, nexact, nfuzzy;
-  okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1);
 
+  okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_IN);
+
+
+
+
+  low = -1;
+  high = 3;
+  yandex_query(low, high, result, &count, YANDEX_NOT_IN);
+  printf("=======================================================\n");
+  printf("Query not in range: %.2f -- %.2f\n", low, high);
+  printf("Result(%d)\n", count);
+  for (i = 0; i < count; i++) {
+    printf("%2d ", result[i]);
+  }
+  printf("\n");
+
+
+
+  
+  for (i = 0; i < count; i++) {
+    
+    chunksize = retriever_get_chunk(rp, result[i], chunk);
+    printf("Pos %2d[%d]: ", result[i], chunksize);
+    for (j = 0; j < chunksize; j++) {
+      if (j%(col/col_nchunks) == 0) printf("\n");
+      printf("%.2f ", chunk[j]);
+    }
+    printf("\n\n");
+  }
+
+
+  okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_NOT_IN);
+  
   
   /* yandex_get(result, count, data_query); */
 

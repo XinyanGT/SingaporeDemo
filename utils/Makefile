@@ -24,7 +24,7 @@ release: CFLAGS += -O3
 release: $(TARGET) $(TESTS)
 
 .PHONY: debug
-debug: CFLAGS += -g
+debug: CFLAGS += -g -O0
 debug: $(TARGET) $(TESTS)
 
 .PHONY: clean

@@ -27,7 +27,8 @@ int main(int argc, char **argv) {
   reader_get_dim_local(&lrow, &lcol, &orow, &ocol);
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);
   
-  double *data = (double *) calloc(NULL, lrow * lcol * sizeof(double));
+  double *data =  (double *) malloc(lrow * lcol * sizeof(double));
+
   int step;
   int i, j;  
 
