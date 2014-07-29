@@ -46,9 +46,9 @@ void writer_init(char *filename, char *varname, decomp_t *dp) {
 void writer_start(int *pos, int count) {
   if (s_first_write) {
     adios_open(&s_adios_file, "restart", s_filename, "w", s_comm);
+    s_first_write = 0;
   } else {
     adios_open(&s_adios_file, "restart", s_filename, "a", s_comm);
-    s_first_write = 0;
   }
   uint64_t data_size = 0;
   uint64_t group_size, total_size;

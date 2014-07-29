@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
   int col_nchunks = atoi(argv[6]);
 
   int period = 1;   // have not implemented adios write temporal aggregated values yet..
-  int steps = 2;    // number of steps to read
+  int steps = 3;    // number of steps to read
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -66,12 +66,13 @@ int main(int argc, char **argv) {
   double *chunk = (double *) malloc(idp->max_chunksize * period * sizeof(double));
 
   int i, j;
-  int result[2][idp->nchunks];
-  result[0][0] = 0;
-  result[0][1] = 2;
+  int result[3][idp->nchunks];
+  result[0][0] = 7;
+  result[0][1] = 8;
   result[1][0] = 1;
   result[1][1] = 4;
-  int count[2] = { 2, 2};
+  result[2][0] = 9;
+  int count[3] = {1, 1, 1};
 
   // Deal with data step by step
   for (i = 0; i < steps; i++) {
