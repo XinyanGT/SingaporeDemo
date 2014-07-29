@@ -16,8 +16,11 @@ static decomp_t *s_dp;
 static char s_varname[256];
 static char s_filename[256];
 static int s_first_write = 1;
+static int s_period;
 
-void writer_init(char *filename, char *varname, decomp_t *dp) {
+void writer_init(char *filename, char *varname, decomp_t *dp, int period) {
+
+  s_period = period;
   
   adios_init_noxml(s_comm);
   adios_allocate_buffer(ADIOS_BUFFER_ALLOC_NOW, 10);
@@ -33,11 +36,11 @@ void writer_init(char *filename, char *varname, decomp_t *dp) {
   int i;
   int lrow, lcol, orow, ocol;
   char g[256], l[256], o[256];
-  sprintf(g, "%d,%d", dp->row, dp->col);
+  sprintf(g, "%d,%d,%d", period, dp->row, dp->col);
   for (i = 0; i < nchunks; i++) {
     decomp_get_pos(s_dp, i, &lrow, &lcol, &orow, &ocol);
-    sprintf(l, "%d,%d", lrow, lcol);
-    sprintf(o, "%d,%d", orow, ocol);
+    sprintf(l, "%d,%d,%d", period, lrow, lcol);
+    sprintf(o, "%d,%d,%d", 0, orow, ocol);
     s_idp[i] = adios_define_var(s_adios_group, s_varname, "", adios_double, l, g, o);
   }		     
 
@@ -56,7 +59,7 @@ void writer_start(int *pos, int count) {
   int i;
   for (i = 0; i < count; i++) {
     decomp_get_pos(s_dp, pos[i], &lrow, &lcol, &orow, &ocol);
-    data_size += lrow * lcol;
+    data_size += lrow * lcol * s_period;
   }
   group_size = data_size * sizeof(double);
   adios_group_size(s_adios_file, group_size, &total_size);

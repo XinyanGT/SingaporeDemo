@@ -1,5 +1,5 @@
 MODULES = reader writer retriever stimer upsampler decomp
-UNITTESTS = reader writer stimer upsampler decomp
+UNITTESTS = reader writer retriever stimer upsampler decomp
 LIBNAME = utils
 
 SDIR = src

@@ -22,18 +22,16 @@ int main(int argc, char **argv) {
   /* naive_set(row, col, 0, data1); */
   /* naive_set(row, col, 1, data2); */
 
-
     // Parameters
-  assert(argc > 6);
+  assert(argc > 8);
   char *filename = argv[1];          // name of the bp file to read 
   char *varname = argv[2];           // name of the variable to read
   int row_nprocs = atoi(argv[3]);    // decompose one step of data to processes 
   int col_nprocs = atoi(argv[4]);
   int row_nchunks = atoi(argv[5]);   // further decompose, a chunk is a unit to compute min and mx
   int col_nchunks = atoi(argv[6]);
-
-  int period = 1;   // have not implemented adios write temporal aggregated values yet..
-  int steps = 3;    // number of steps to read
+  int period = atoi(argv[7]);
+  int steps = atoi(argv[8]);    // number of steps to read
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -60,7 +58,7 @@ int main(int argc, char **argv) {
   
   rp = retriever_init(idp, period);
   
-  writer_init("test.bp", "vol", wdp);
+  writer_init("test.bp", "vol", wdp, period);
   
   double *data = (double *) malloc(lrow * lcol * sizeof(double));
   double *chunk = (double *) malloc(idp->max_chunksize * period * sizeof(double));
@@ -72,7 +70,8 @@ int main(int argc, char **argv) {
   result[1][0] = 1;
   result[1][1] = 4;
   result[2][0] = 9;
-  int count[3] = {1, 1, 1};
+  int count[3] = {2, 2, 1};
+  int adios_step = 0;
 
   // Deal with data step by step
   for (i = 0; i < steps; i++) {
@@ -85,11 +84,12 @@ int main(int argc, char **argv) {
 
     // Last step in a period
     if ( (i+1) % period == 0) {
+      adios_step = i / period;
       // Write
-      writer_start(result[i], count[i]);
-      for (j = 0; j < count[i]; j++) {
-	retriever_get_chunk(rp, result[i][j], chunk);
-	writer_write(result[i][j], chunk);
+      writer_start(result[adios_step], count[adios_step]);
+      for (j = 0; j < count[adios_step]; j++) {
+	retriever_get_chunk(rp, result[adios_step][j], chunk);
+	writer_write(result[adios_step][j], chunk);
       }
       writer_stop();
     }

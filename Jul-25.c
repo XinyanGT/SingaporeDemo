@@ -14,20 +14,19 @@
 int main(int argc, char **argv) {
 
   // Parameters
-  assert(argc > 10);
+  assert(argc > 12);
   char *filename = argv[1];          // name of the bp file to read 
   char *varname = argv[2];           // name of the variable to read
   int row_nprocs = atoi(argv[3]);    // decompose one step of data to processes 
   int col_nprocs = atoi(argv[4]);
   int row_nchunks = atoi(argv[5]);   // further decompose, a chunk is a unit to compute min and mx
   int col_nchunks = atoi(argv[6]);
-  int nbuckets = atoi(argv[7]);      // number of buckets
-  int bucket_size = atoi(argv[8]);   // max buckets size
-  double low = strtod(argv[9], NULL);    // low bound for query
-  double high = strtod(argv[10], NULL);  // high bound for query
-
-  int period = 1;   // have not implemented adios write temporal aggregated values yet..
-  int steps = 200;    // number of steps to read
+  int period = atoi(argv[7]);
+  int steps = atoi(argv[8]);         // number of steps to read
+  int nbuckets = atoi(argv[9]);      // number of buckets
+  int bucket_size = atoi(argv[10]);   // max buckets size
+  double low = strtod(argv[11], NULL);    // low bound for query
+  double high = strtod(argv[12], NULL);  // high bound for query
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -54,7 +53,7 @@ int main(int argc, char **argv) {
   
   rp = retriever_init(idp, period);
   
-  writer_init("test.bp", "vol", wdp);
+  writer_init("test.bp", "vol", wdp, period);
   
   double *data = (double *) malloc(lrow * lcol * sizeof(double));
   double *chunk = (double *) malloc(idp->max_chunksize * period * sizeof(double));
