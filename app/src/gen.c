@@ -25,8 +25,8 @@ int main(int argc, char **argv) {
   int steps = atoi(argv[8]);         // number of steps to read
   int nbuckets = atoi(argv[9]);      // number of buckets
   int bucket_size = atoi(argv[10]);   // max buckets size
-  double low = strtod(argv[11], NULL);    // low bound for query
-  double high = strtod(argv[12], NULL);  // high bound for query
+  float low = strtof(argv[11], NULL);    // low bound for query
+  float high = strtof(argv[12], NULL);  // high bound for query
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -37,10 +37,10 @@ int main(int argc, char **argv) {
   decomp_t *rdp;
   rdp = reader_init(filename, varname, row_nprocs, col_nprocs);  // for reader
 
-  int row, col, total_steps;
+  int row, col;
   int lrow, lcol, orow, ocol;
-  reader_get_dim(&row, &col, &total_steps);
-  printf("[%d]G: %d X %d, total_steps: %d\n", rank, row, col, total_steps);
+  reader_get_dim(&row, &col);
+  printf("[%d]G: %d X %d\n", rank, row, col);
   reader_get_dim_local(&lrow, &lcol, &orow, &ocol);
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
@@ -53,10 +53,10 @@ int main(int argc, char **argv) {
   
   rp = retriever_init(idp, period);
   
-  writer_init("test.bp", "vol", wdp, period);
+  writer_init("test.bp", "vol", wdp, row, col, period);
   
-  double *data = (double *) malloc(lrow * lcol * sizeof(double));
-  double *chunk = (double *) malloc(idp->max_chunksize * period * sizeof(double));
+  float *data = (float *) malloc(lrow * lcol * sizeof(float));
+  float *chunk = (float *) malloc(idp->max_chunksize * period * sizeof(float));
   yandex_init(rp, nbuckets, bucket_size);
 
   int i, j;
@@ -68,8 +68,8 @@ int main(int argc, char **argv) {
   yandex_query_type type = YANDEX_NOT_IN;
 
   // Deal with data step by step
-  for (i = 0; i < steps; i++) {
-
+  i = 0;
+  while (i < steps || steps < 0) {
     // First step in a period
     if (i % period == 0) {
       stimer_start();
@@ -117,10 +117,11 @@ int main(int argc, char **argv) {
       }
       writer_stop();
     }
+    i++;
   }
 
   // Index building time and query time
-  printf("Index building time: %fs. Query time: %fs\n", total_build_time, total_query_time);
+  printf("[%d]Index building time: %fs. Query time: %fs\n", rank, total_build_time, total_query_time);
   
   // Clear
   free(chunk);

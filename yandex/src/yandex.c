@@ -14,21 +14,21 @@
 #define MAX         0    // index of max
 #define MIN         1
 
-static double *s_chunk_min, *s_chunk_max;
-static double *s_chunk_range[2];
+static float *s_chunk_min, *s_chunk_max;
+static float *s_chunk_range[2];
 static int *s_chunk_range_dc[2];
 static retriever_t *s_rp;
 static decomp_t *s_dp;
 static int s_first_step;
-static double *s_verify_data;
+static float *s_verify_data;
 
 
 // Compute min max for a step of data
-static void yandex_shrunk(const double *I) {
+static void yandex_shrunk(const float *I) {
   int nchunks = s_dp->nchunks;
   int i, j, k;
   int lrow, lcol, orow, ocol;
-  double max, min, elem;
+  float max, min, elem;
   for (i = 0; i < nchunks; i++) {
     decomp_get_pos(s_dp, i, &lrow, &lcol, &orow, &ocol);
     max = I[orow *(s_dp->col) + ocol];
@@ -50,8 +50,8 @@ static void yandex_update_minmax(I) {
   int i;
   int nchunks = s_dp->nchunks;
   if (s_first_step) {
-    memcpy(s_chunk_range[MAX], s_chunk_max, nchunks * sizeof(double));
-    memcpy(s_chunk_range[MIN], s_chunk_min, nchunks * sizeof(double));
+    memcpy(s_chunk_range[MAX], s_chunk_max, nchunks * sizeof(float));
+    memcpy(s_chunk_range[MIN], s_chunk_min, nchunks * sizeof(float));
     s_first_step = 0;
   } else {
     for (i = 0; i < s_dp->nchunks; i++) {
@@ -69,9 +69,9 @@ void yandex_init(retriever_t *rp, int nbuckets, int bucket_size) {
   
   // Allocate space
   int nchunks = s_dp->nchunks;
-  s_chunk_min = (double *) malloc(nchunks * sizeof(double));
-  s_chunk_max = (double *) malloc(nchunks * sizeof(double));
-  double *dtemp  = (double *) malloc(2 * nchunks * sizeof(double));
+  s_chunk_min = (float *) malloc(nchunks * sizeof(float));
+  s_chunk_max = (float *) malloc(nchunks * sizeof(float));
+  float *dtemp  = (float *) malloc(2 * nchunks * sizeof(float));
   s_chunk_range[MIN] = dtemp + nchunks*MIN;
   s_chunk_range[MAX] = dtemp + nchunks*MAX;
 
@@ -107,7 +107,7 @@ void yandex_stop() {
 void yandex_update() {
 
   // Get min max for this step
-  double *I = retriever_get_laststep(s_rp);
+  float *I = retriever_get_laststep(s_rp);
   yandex_shrunk(I);
   
   // Update min max record
@@ -115,7 +115,7 @@ void yandex_update() {
 }
 
 
-void yandex_query(double low_bound, double high_bound, int *query_result, int *count, yandex_query_type type) {
+void yandex_query(float low_bound, float high_bound, int *query_result, int *count, yandex_query_type type) {
 
   int low_dc;
   int high_dc;
@@ -140,7 +140,7 @@ void yandex_query(double low_bound, double high_bound, int *query_result, int *c
 /*
  * Verify whether yandex query result is valid
  */
-int yandex_verify(double low_bound, double high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type) {
+int yandex_verify(float low_bound, float high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type) {
   
   // hit: the chunk contains value in the range
   // has: the chunk number appears in query result
@@ -148,7 +148,7 @@ int yandex_verify(double low_bound, double high_bound, int *query_result, int co
   // nrough: number of data may be in that range
   // chunksize: time X row X col
 
-  double *data;
+  float *data;
   int i, j;
   int chunksize, nexact, nrough;
   int hitflag, okflag, hasflag;
@@ -156,7 +156,7 @@ int yandex_verify(double low_bound, double high_bound, int *query_result, int co
   nexact = nrough = 0;
   okflag = 1;
   if (s_verify_data == NULL) {
-    s_verify_data = (double *) malloc(s_dp->max_chunksize * s_rp->period * sizeof(double));
+    s_verify_data = (float *) malloc(s_dp->max_chunksize * s_rp->period * sizeof(float));
   }
   data = s_verify_data;
 
@@ -208,9 +208,9 @@ int yandex_verify(double low_bound, double high_bound, int *query_result, int co
       printf("ERROR. Query result failed verification\n");
     }
     printf("Rough: %d[%.2f%%]. Exact: %d[%.2f%%]. Ratio: %.2f%%\n",
-   	   nrough, (double)nrough/(s_rp->period*(s_dp->size))*100,
-	   nexact, (double)nexact/(s_rp->period*(s_dp->size))*100,
-	   (double)nrough / nexact*100);
+   	   nrough, (float)nrough/(s_rp->period*(s_dp->size))*100,
+	   nexact, (float)nexact/(s_rp->period*(s_dp->size))*100,
+	   (float)nrough / nexact*100);
   }
 
   return okflag;

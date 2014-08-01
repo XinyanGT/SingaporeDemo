@@ -19,15 +19,15 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(comm, &rank);
   reader_init(filename, varname, row_nprocs, col_nprocs);
 
-  int row, col, total_steps;
+  int row, col;
   int lrow, lcol, orow, ocol;
 
-  reader_get_dim(&row, &col, &total_steps);
-  printf("[%d]G: %d X %d, total_steps: %d\n", rank, row, col, total_steps);
+  reader_get_dim(&row, &col);
+  printf("[%d]G: %d X %d\n", rank, row, col);
   reader_get_dim_local(&lrow, &lcol, &orow, &ocol);
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);
   
-  double *data =  (double *) malloc(lrow * lcol * sizeof(double));
+  float *data =  (float *) malloc(lrow * lcol * sizeof(float));
 
   int step;
   int i, j;  

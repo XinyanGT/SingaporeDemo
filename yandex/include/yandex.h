@@ -14,8 +14,8 @@ void yandex_init(retriever_t *rp, int nbuckets, int bucket_size);
 void yandex_start();
 void yandex_update();
 void yandex_stop();
-void yandex_query(double low_bound, double high_bound, int *query_result, int *count, yandex_query_type type);
-int yandex_verify(double low_bound, double high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type);
+void yandex_query(float low_bound, float high_bound, int *query_result, int *count, yandex_query_type type);
+int yandex_verify(float low_bound, float high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type);
 void yandex_finalize();
 
 #endif

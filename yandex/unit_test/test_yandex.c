@@ -7,25 +7,25 @@ int main() {
   int period = 2;
   int i, j;
 
-  double data1[4 * 6] =
+  float data1[4 * 6] =
     {1.1, 2.5, 3.6, 1.5, 2.9, 3.5,
      0.7, 2.1, 2.7, 3.9, 2.2, 1.4,
      3.5, 1.5, 0.2, 1.3, 2.6, 3.1,
      0.3, 1.7, 0.9, 3.2, 2.8, 2.6};
   
-  double data2[4 * 6] =
+  float data2[4 * 6] =
     {1.0, 2.5, 3.7, 1.4, 2.6, 3.7,
      0.4, 2.3, 2.8, 3.9, 2.0, 1.5,
      3.1, 1.0, 0.3, 1.3, 2.8, 3.4,
      0.6, 1.9, 0.8, 3.1, 2.4, 0.2};
 
-  double low = 0, high = 1.0;
+  float low = 0, high = 1.0;
   int row_nchunks = 2;
   int col_nchunks = 6;
   int result[row * col];
   int count;
-  double data_query[period * col * row];
-  double chunk[period*col*row];
+  float data_query[period * col * row];
+  float chunk[period*col*row];
   decomp_t *dp;
   retriever_t *rp;
 

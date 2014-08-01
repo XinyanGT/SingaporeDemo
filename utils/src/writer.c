@@ -18,13 +18,13 @@ static char s_filename[256];
 static int s_first_write = 1;
 static int s_period;
 
-void writer_init(char *filename, char *varname, decomp_t *dp, int period) {
+void writer_init(char *filename, char *varname, decomp_t *dp, int grow, int gcol, int period) {
 
   s_period = period;
   
   adios_init_noxml(s_comm);
   adios_allocate_buffer(ADIOS_BUFFER_ALLOC_NOW, 10);
-  adios_declare_group(&s_adios_group, "restart", "", adios_flag_no);
+  adios_declare_group(&s_adios_group, "restart", "iter", adios_flag_no);
   adios_select_method(s_adios_group, "MPI", "", "");
   
   sprintf(s_varname, "%s", varname);
@@ -36,12 +36,12 @@ void writer_init(char *filename, char *varname, decomp_t *dp, int period) {
   int i;
   int lrow, lcol, orow, ocol;
   char g[256], l[256], o[256];
-  sprintf(g, "%d,%d,%d", period, dp->row, dp->col);
+  sprintf(g, "%d,%d,%d", period, grow, gcol);
   for (i = 0; i < nchunks; i++) {
     decomp_get_pos(s_dp, i, &lrow, &lcol, &orow, &ocol);
     sprintf(l, "%d,%d,%d", period, lrow, lcol);
     sprintf(o, "%d,%d,%d", 0, orow, ocol);
-    s_idp[i] = adios_define_var(s_adios_group, s_varname, "", adios_double, l, g, o);
+    s_idp[i] = adios_define_var(s_adios_group, s_varname, "", adios_real, l, g, o);
   }		     
 
 }
@@ -61,11 +61,11 @@ void writer_start(int *pos, int count) {
     decomp_get_pos(s_dp, pos[i], &lrow, &lcol, &orow, &ocol);
     data_size += lrow * lcol * s_period;
   }
-  group_size = data_size * sizeof(double);
+  group_size = data_size * sizeof(float);
   adios_group_size(s_adios_file, group_size, &total_size);
 }
 
-void writer_write(int pos, double *data) {
+void writer_write(int pos, float *data) {
   adios_write_byid(s_adios_file, s_idp[pos], data);
 }
 

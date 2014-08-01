@@ -7,6 +7,7 @@
  ************************************************************/
 
 #include "reader.h"
+#include "adios_error.h"
 #include "common.h"
 #include "mpi.h"
 #include "adios_read.h"
@@ -19,7 +20,7 @@ static enum ADIOS_READ_METHOD s_method = ADIOS_READ_METHOD_BP;
 static MPI_Comm s_comm = MPI_COMM_WORLD;
 static uint64_t s_current_step;          // current logical step
 static uint64_t s_steps_per_adios_step;  // how many logical steps contained in an adios step
-static uint64_t s_total_steps;
+static float s_timeout_sec = 1.0;
 static int s_is_adios_3d;                // whether in adios it's a 3d var
 static int s_rank, s_nprocs;
 static decomp_t *s_dp;
@@ -33,7 +34,7 @@ decomp_t *reader_init(char *filename, char *varname, int row_nprocs, int col_npr
 
   // ADIOS Init
   adios_read_init_method(s_method, s_comm, "verbose=3");
-  s_file = adios_read_open(filename, s_method, s_comm, ADIOS_LOCKMODE_NONE, 0);
+  s_file = adios_read_open(filename, s_method, s_comm, ADIOS_LOCKMODE_NONE, s_timeout_sec);
 
   if (s_file == NULL) {
     printf("%s\n", adios_errmsg());
@@ -60,7 +61,7 @@ decomp_t *reader_init(char *filename, char *varname, int row_nprocs, int col_npr
     col = s_var->dims[1];
     s_steps_per_adios_step = 1;
   }
-  s_total_steps = s_steps_per_adios_step * s_var->nsteps;
+  
   
   decomp_t *dp;
   dp = decomp_init(row, col, row_nprocs, col_nprocs);
@@ -81,9 +82,7 @@ decomp_t *reader_init(char *filename, char *varname, int row_nprocs, int col_npr
 
 // Get global dimension
 // Number logical steps
-void reader_get_dim(int *row, int *col, int *total_steps) {
-  
-  *total_steps = s_total_steps;
+void reader_get_dim(int *row, int *col) {
   *row = s_row; 
   *col = s_col;
 
@@ -99,15 +98,27 @@ void reader_get_dim_local(int *row, int *col, int *orow, int *ocol) {
 
 
 // Read a new step 
-void reader_read(double *data) {
+void reader_read(float *data) {
   
   ADIOS_SELECTION *sel;
   uint64_t start[3], count[3];
-  int adios_step;
-
-  assert(s_current_step < s_total_steps);
-  adios_step = s_current_step / s_steps_per_adios_step;
   
+  int adios_step = s_current_step / s_steps_per_adios_step;
+
+  // Set data to zero
+  memset(data, 0, s_lrow*s_lcol*sizeof(float));
+  if (adios_step != 0) {
+    adios_advance_step(s_file, 0, s_timeout_sec);
+    if (adios_errno == err_step_notready) {
+      printf("No new step arrived within the timeout(%.2fsec). Quit. %s\n", s_timeout_sec, adios_errmsg());
+      exit(0);
+    }
+    if (adios_errno == err_end_of_stream) {
+            printf("End of stream. Not new step to read. Quit. %s\n", adios_errmsg());
+      exit(0);
+    }
+  }
+    
   start[0] = s_current_step % s_steps_per_adios_step;
   start[1] = s_orow;
   start[2] = s_ocol;
@@ -121,7 +132,7 @@ void reader_read(double *data) {
   } else {
     sel = adios_selection_boundingbox(2, start+1, count+1);
   }
-  adios_schedule_read(s_file, sel, s_varname, adios_step, 1, data);
+  adios_schedule_read(s_file, sel, s_varname, 0, 1, data);
   adios_perform_reads(s_file, 1);
   
   s_current_step++; // increment current logical step

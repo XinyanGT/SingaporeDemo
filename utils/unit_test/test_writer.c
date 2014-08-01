@@ -3,7 +3,7 @@
 #include "reader.h"
 #include "mpi.h"
 
-void naive_set(int row, int col, double offset_value, double *data) {
+void naive_set(int row, int col, float offset_value, float *data) {
   int i,j; 
   for (i = 0; i < row; i++) {
     for (j = 0; j < col; j++) {
@@ -15,8 +15,8 @@ void naive_set(int row, int col, double offset_value, double *data) {
 
 int main(int argc, char **argv) {
   
-  /* double data1[row*col], data2[row*col]; */
-  /* double data[row*col]; */
+  /* float data1[row*col], data2[row*col]; */
+  /* float data[row*col]; */
   /* int period = 1; */
   
   /* naive_set(row, col, 0, data1); */
@@ -42,10 +42,10 @@ int main(int argc, char **argv) {
   decomp_t *rdp;
   rdp = reader_init(filename, varname, row_nprocs, col_nprocs);  // for reader
 
-  int row, col, total_steps;
+  int row, col;
   int lrow, lcol, orow, ocol;
-  reader_get_dim(&row, &col, &total_steps);
-  printf("[%d]G: %d X %d, total_steps: %d\n", rank, row, col, total_steps);
+  reader_get_dim(&row, &col);
+  printf("[%d]G: %d X %d\n", rank, row, col);
   reader_get_dim_local(&lrow, &lcol, &orow, &ocol);
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
@@ -58,10 +58,10 @@ int main(int argc, char **argv) {
   
   rp = retriever_init(idp, period);
   
-  writer_init("test.bp", "vol", wdp, period);
+  writer_init("test.bp", "vol", wdp, row, col, period);
   
-  double *data = (double *) malloc(lrow * lcol * sizeof(double));
-  double *chunk = (double *) malloc(idp->max_chunksize * period * sizeof(double));
+  float *data = (float *) malloc(lrow * lcol * sizeof(float));
+  float *chunk = (float *) malloc(idp->max_chunksize * period * sizeof(float));
 
   int i, j;
   int result[3][idp->nchunks];

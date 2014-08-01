@@ -1,11 +1,22 @@
+# Dependencies
+APP_DIR = app
+APP_NAMES = gen viz
+APPS = $(patsubst %, $(APP_DIR)/exe/%, $(APP_NAMES))
 YANDEX_DIR = yandex
-YANDEX_LIB = $(YANDEX_DIR)/lib/yandex.a
+YANDEX_LIB = $(YANDEX_DIR)/lib/libyandex.a
 UTILS_DIR = utils
-UTILS_LIB = $(UTILS_DIR)/lib/utils.a
+UTILS_LIB = $(UTILS_DIR)/lib/libutils.a
+VIZ_DIR = viz
+VIZ_LIB = $(VIZ_DIR)/lib/libviz.a
 ADIOS_INC = $(shell adios_config -c)
-ADIOS_LINK = $(shell adios_config -l)
+ADIOS_LIB = $(shell adios_config -l)
+OPENCV_DIR = /ccs/home/voidp/Software/opencv
+OPENCV_LIB = -L$(OPENCV_DIR)/lib -lopencv_core -lopencv_imgproc -lopencv_highgui -lopencv_contrib
+
+INCS = -I$(YANDEX_DIR)/include -I$(UTILS_DIR)/include -I$(VIZ_DIR)/include $(ADIOS_INC)
+LIBS = -L$(YANDEX_DIR)/lib -lyandex -L$(UTILS_DIR)/lib -lutils -L$(VIZ_DIR)/lib -lviz $(ADIOS_LIB) $(OPENCV_LIB)
+
 CC = mpicc
-APP = Jul-25.c
 
 .PHONY: default
 default: release
@@ -19,22 +30,22 @@ debug_all: clean_all debug
 .PHONY: release
 release: CFLAGS += -O3
 release: VERSION = release
-release: a.out
+release: $(APPS)
 
 .PHONY: debug
 debug: CFLAGS += -g -O0
 debug: VERSION = debug
-debug: a.out
+debug: $(APPS)
 
 
 .PHONY: debug_all
 debug: CFLAGS += -g -O0
 debug: VERSION = debug
-debug: a.out 
+debug: $(APPS) 
 
 
-a.out: $(APP) $(UTILS_LIB) $(YANDEX_LIB)
-	$(CC) $(CFLAGS) $(ADIOS_INC) -I$(YANDEX_DIR)/include -I$(UTILS_DIR)/include $(APP) -L$(YANDEX_DIR)/lib -L$(UTILS_DIR)/lib -lyandex -lutils $(ADIOS_LINK)
+$(APP_DIR)/exe/%: $(APP_DIR)/src/%.c $(UTILS_LIB) $(YANDEX_LIB) $(VIZ_LIB)
+	$(CC) $(CFLAGS) $(INCS) $< -o $@ $(LIBS)
 
 $(YANDEX_LIB):
 	$(MAKE) $(VERSION) -C $(YANDEX_DIR)
@@ -42,10 +53,14 @@ $(YANDEX_LIB):
 $(UTILS_LIB):
 	$(MAKE) $(VERSION) -C $(UTILS_DIR)
 
+$(VIZ_LIB):
+	$(MAKE) $(VERSION) -C $(VIZ_DIR)
+
 .PHONY: clean_all
 clean_all: clean
 	$(MAKE) clean -C $(YANDEX_DIR)
 	$(MAKE) clean -C $(UTILS_DIR)
+	$(MAKE) clean -C $(VIZ_DIR)
 
 
 .PHONY: clean

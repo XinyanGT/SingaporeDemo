@@ -11,9 +11,9 @@ int main(int argc, char **argv) {
   printf("Quantization level: %d\n", level);
 
   int size = 10;
-  double data[10] = {1, 3, 4, 4.1, 6, 6.3, 8, 9, 10, 11};
+  float data[10] = {1, 3, 4, 4.1, 6, 6.3, 8, 9, 10, 11};
   int data_dc[10];
-  double singleton = 5.4;
+  float singleton = 5.4;
   int singleton_dc;
     
   quantizer_init(level);

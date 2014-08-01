@@ -33,17 +33,18 @@ void upsampler_upsample(size_t dimy, size_t dimx, double X[][dimx],
   assert(dimx2 == scale*dimx);
 
   double p[4][4];
+  size_t i, j, jk, ik, jj, ii, t2, t1;
 
-  for (size_t j=0; j<dimy; j++) 
-    for (size_t i=0; i<dimx; i++)
-      for (size_t jk=0; jk<scale; jk++)
-	for (size_t ik=0; ik<scale; ik++)
+  for (j=0; j<dimy; j++) 
+    for (i=0; i<dimx; i++)
+      for (jk=0; jk<scale; jk++)
+	for (ik=0; ik<scale; ik++)
 	  {
-	    size_t jj = j*scale + jk;
-	    size_t ii = i*scale + ik;
+	    jj = j*scale + jk;
+	    ii = i*scale + ik;
 
-	    for (size_t t2=0; t2<4; t2++)
-	      for (size_t t1=0; t1<4; t1++)
+	    for (t2=0; t2<4; t2++)
+	      for (t1=0; t1<4; t1++)
 		{
 		  int64_t o1 = i + t1 - 1;
 		  int64_t o2 = j + t2 - 1;
