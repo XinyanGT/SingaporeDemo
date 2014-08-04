@@ -18,14 +18,14 @@ static char s_filename[256];
 static int s_first_write = 1;
 static int s_period;
 
-void writer_init(char *filename, char *varname, decomp_t *dp, int grow, int gcol, int period) {
+void writer_init(char *filename, char *varname, char *method, decomp_t *dp, int grow, int gcol, int period) {
 
   s_period = period;
   
   adios_init_noxml(s_comm);
   adios_allocate_buffer(ADIOS_BUFFER_ALLOC_NOW, 10);
   adios_declare_group(&s_adios_group, "restart", "iter", adios_flag_no);
-  adios_select_method(s_adios_group, "MPI", "", "");
+  adios_select_method(s_adios_group, method, "", "");
   
   sprintf(s_varname, "%s", varname);
   sprintf(s_filename, "%s", filename);

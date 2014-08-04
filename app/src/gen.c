@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
   
   rp = retriever_init(idp, period);
   
-  writer_init("test.bp", "vol", wdp, row, col, period);
+  writer_init("test.bp", "vol", "MPI", wdp, row, col, period);
   
   float *data = (float *) malloc(lrow * lcol * sizeof(float));
   float *chunk = (float *) malloc(idp->max_chunksize * period * sizeof(float));
