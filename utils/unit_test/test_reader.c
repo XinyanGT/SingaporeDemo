@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
   MPI_Init(&argc, &argv);
   
   MPI_Comm_rank(comm, &rank);
-  reader_init(filename, varname, row_nprocs, col_nprocs);
+  reader_init(filename, varname, ADIOS_READ_METHOD_BP, row_nprocs, col_nprocs);
 
   int row, col;
   int lrow, lcol, orow, ocol;

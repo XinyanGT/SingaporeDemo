@@ -29,10 +29,11 @@ static uint64_t s_row, s_col, s_lrow, s_lcol, s_orow, s_ocol;
 
 // Return decomp_t which indicates how data is decomposed
 // reader will free it when finalizing
-decomp_t *reader_init(char *filename, char *varname, int row_nprocs, int col_nprocs) {
+decomp_t *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method, int row_nprocs, int col_nprocs) {
   MPI_Status status; 
 
   // ADIOS Init
+  s_method = method;
   adios_read_init_method(s_method, s_comm, "verbose=3");
   s_file = adios_read_open(filename, s_method, s_comm, ADIOS_LOCKMODE_NONE, s_timeout_sec);
 
