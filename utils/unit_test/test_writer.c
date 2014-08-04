@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 
   // Decompose by processes, to read different portions of data
   decomp_t *rdp;
-  rdp = reader_init(filename, varname, row_nprocs, col_nprocs);  // for reader
+  rdp = reader_init(filename, varname, ADIOS_READ_METHOD_BP, row_nprocs, col_nprocs);  // for reader
 
   int row, col;
   int lrow, lcol, orow, ocol;

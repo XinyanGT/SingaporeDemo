@@ -42,6 +42,6 @@ $(ODIR)/%.o: $(SDIR)/%.c $(HEADERS)
 
 $(EDIR)/%: $(TDIR)/%.c $(HEADERS) $(TARGET)
 	@mkdir -p $(EDIR)
-	$(CC) $(CFLAGS) $< -o $@ -L$(LDIR) -l$(LIBNAME) `adios_config -l`
+	$(CC) $(CFLAGS) `adios_config -c` $< -o $@ -L$(LDIR) -l$(LIBNAME) `adios_config -l`
 
 
