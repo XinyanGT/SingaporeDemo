@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-void buckets_init(int nbuckets, int size);
+void buckets_init(int nbuckets);
 
 void buckets_start();
 

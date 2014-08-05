@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
   int low = atoi(argv[3]);
   int high = atoi(argv[4]);
 
-  buckets_init(nbuckets, bucket_size);
+  buckets_init(nbuckets);
 
   // Fill buckets
   int size = 10;

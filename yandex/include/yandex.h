@@ -10,7 +10,7 @@ typedef enum {
 #include "retriever.h"
 #include "decomp.h"
 
-void yandex_init(retriever_t *rp, int hist_ratio, int nbuckets, int bucket_size);
+void yandex_init(retriever_t *rp, int nbuckets, int hist_ratio);
 void yandex_start();
 void yandex_update();
 void yandex_stop();

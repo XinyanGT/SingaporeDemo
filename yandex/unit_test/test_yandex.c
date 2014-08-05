@@ -33,7 +33,7 @@ int main() {
   // Init
   dp = decomp_init(row, col, row_nchunks, col_nchunks);
   rp = retriever_init(dp, period);
-  yandex_init(rp, hist_ratio, nbuckets, bucket_size);
+  yandex_init(rp, nbuckets, hist_ratio);
 
   // Start a period
   yandex_start();
