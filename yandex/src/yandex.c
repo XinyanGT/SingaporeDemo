@@ -9,7 +9,7 @@
 
 #include "yandex.h"
 #include "buckets.h"
-#include "quantizer.h"
+#include "hquantizer.h"
 
 #define MAX         0    // index of max
 #define MIN         1
@@ -62,7 +62,7 @@ static void yandex_update_minmax(I) {
 }
 
 
-void yandex_init(retriever_t *rp, int nbuckets, int bucket_size) {
+void yandex_init(retriever_t *rp, int hist_ratio, int nbuckets, int bucket_size) {
 
   s_rp = rp;
   s_dp = rp->dp;
@@ -82,8 +82,8 @@ void yandex_init(retriever_t *rp, int nbuckets, int bucket_size) {
     // Init buckets
   buckets_init(nbuckets, bucket_size);
 
-  // Init quantizer
-  quantizer_init(nbuckets);
+  // Init hquantizer
+  hquantizer_init(nbuckets, hist_ratio);
 
 }
 
@@ -99,8 +99,8 @@ void yandex_start() {
 // End of a period, build index
 void yandex_stop() {
     int nchunks = s_dp->nchunks;
-    quantizer_restart(s_chunk_range[0], nchunks*2);
-    quantizer_quantize(s_chunk_range[0], s_chunk_range_dc[0], nchunks*2);
+    hquantizer_restart(s_chunk_range[0], nchunks*2);
+    hquantizer_quantize(s_chunk_range[0], s_chunk_range_dc[0], nchunks*2);
     buckets_fill_range(s_chunk_range_dc[MAX], s_chunk_range_dc[MIN], nchunks);
 }
 
@@ -122,8 +122,8 @@ void yandex_query(float low_bound, float high_bound, int *query_result, int *cou
 
   assert(low_bound <= high_bound);
   
-  low_dc = quantizer_quantize_singleton(low_bound);
-  high_dc = quantizer_quantize_singleton(high_bound);
+  low_dc = hquantizer_quantize_singleton(low_bound);
+  high_dc = hquantizer_quantize_singleton(high_bound);
 
   //  printf("low: %d, high: %d\n", low_dc, high_dc);
   switch (type) {
@@ -222,7 +222,7 @@ void yandex_finalize() {
   free(s_chunk_range[0]);
   free(s_chunk_range_dc[0]);
   buckets_finalize();
-  quantizer_finalize();  
+  hquantizer_finalize();  
 }
 
  

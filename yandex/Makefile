@@ -1,5 +1,5 @@
-MODULES = quantizer buckets yandex
-UNITTESTS = quantizer buckets yandex
+MODULES = quantizer buckets yandex hquantizer
+UNITTESTS = quantizer buckets yandex hquantizer
 LIBNAME = yandex
 UTILS_DIR = ../utils
 
