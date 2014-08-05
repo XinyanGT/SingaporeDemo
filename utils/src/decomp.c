@@ -20,26 +20,46 @@ decomp_t *decomp_init(int row, int col, int row_nchunks, int col_nchunks) {
   return dp;
 }
 
+
 // Get offsets and positions of a subchunk in dp, related to its superchunk
+// For example, row = 2400, row_nchunks = 500
+// Then first part (0-99) should have 4 elements, and second part (100-499) should have 5
+// elements, instead of first part(0-498) having 4 elements and second part(499) having 404 elements
 inline void decomp_get_pos(decomp_t *dp, int pos, int *lrow, int *lcol, int *orow, int *ocol) {
-
-  int lr, lc, or, oc;
-  lr = dp->row / dp->row_nchunks;
-  or = lr * (pos / dp->col_nchunks);
-  if (pos / dp->col_nchunks == dp->row_nchunks - 1) {
-    lr += dp->row % dp->row_nchunks;
-  }
-
-  lc = dp->col / dp->col_nchunks;
-  oc = lc * (pos % dp->col_nchunks);
-  if ( (pos+1) % dp->col_nchunks == 0) {
-    lc += dp->col % dp->col_nchunks;
-  }
   
+  // lr: number of rows in this chunk
+  // or: row offset
+  // ir: index in row for this chunk (0 - row_nchunks-1)
+  // dr: delimit index in row, from this index, second part chunks start
+  
+  int lr, lc, or, oc;
+  int dr, dc, ir, ic;
+  
+  ir = pos / dp->col_nchunks;  
+  lr = dp->row / dp->row_nchunks;
+  dr = dp->row_nchunks - dp->row % dp->row_nchunks;
+  if (ir < dr) {  // first part
+    or = lr * ir;
+  } else {
+    or = lr * dr + (ir-dr) * (lr+1);
+    lr++;
+  }
+
+  ic = pos % dp->col_nchunks;
+  lc = dp->col / dp->col_nchunks;
+  dc = dp->col_nchunks - dp->col % dp->col_nchunks;
+  if (ic < dc) {
+    oc = lc * ic;
+  } else {
+    oc = lc * dc + (ic-dc) * (lc+1);
+    lc++;
+  }
+
   *lrow = lr;
   *lcol = lc;
   *orow = or + dp->orowg;
   *ocol = oc + dp->ocolg;
+
 }
 
 // Focus on a certain chunk, superchunk of dpB is in the position pos in dpA

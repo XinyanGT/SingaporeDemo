@@ -4,6 +4,7 @@ int main() {
 
   int row = 4, col = 6;
   int nbuckets = 40, bucket_size = 100;
+  int hist_ratio = 5;
   int period = 2;
   int i, j;
 
@@ -32,7 +33,7 @@ int main() {
   // Init
   dp = decomp_init(row, col, row_nchunks, col_nchunks);
   rp = retriever_init(dp, period);
-  yandex_init(rp, nbuckets, bucket_size);
+  yandex_init(rp, hist_ratio, nbuckets, bucket_size);
 
   // Start a period
   yandex_start();

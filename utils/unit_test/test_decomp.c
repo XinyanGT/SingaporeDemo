@@ -7,8 +7,8 @@ int main() {
   int row, col, row_nchunks, col_nchunks;
   int i;
   
-  row = 13;
-  col = 21 ;
+  row = 14;
+  col = 24 ;
   row_nchunks = 3;
   col_nchunks = 5;
   dpA = decomp_init(row, col, row_nchunks, col_nchunks);
