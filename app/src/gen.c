@@ -23,11 +23,10 @@ int main(int argc, char **argv) {
   int col_nchunks = atoi(argv[6]);
   int period = atoi(argv[7]);
   int steps = atoi(argv[8]);         // number of steps to read
-  int hist_ratio = atoi(argv[9]);         // number of steps to read
-  int nbuckets = atoi(argv[10]);      // number of buckets
-  int bucket_size = atoi(argv[11]);   // max buckets size
-  float low = strtof(argv[12], NULL);    // low bound for query
-  float high = strtof(argv[13], NULL);  // high bound for query
+  int nbuckets = atoi(argv[9]);      // number of buckets
+  int hist_ratio = atoi(argv[10]);         // number of steps to read
+  float low = strtof(argv[11], NULL);    // low bound for query
+  float high = strtof(argv[12], NULL);  // high bound for query
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -58,7 +57,7 @@ int main(int argc, char **argv) {
   
   float *data = (float *) malloc(lrow * lcol * sizeof(float));
   float *chunk = (float *) malloc(idp->max_chunksize * period * sizeof(float));
-  yandex_init(rp, hist_ratio, nbuckets, bucket_size);
+  yandex_init(rp, nbuckets, hist_ratio);
 
   int i, j;
   int result[idp->nchunks];

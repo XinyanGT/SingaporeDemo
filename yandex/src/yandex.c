@@ -62,7 +62,7 @@ static void yandex_update_minmax(I) {
 }
 
 
-void yandex_init(retriever_t *rp, int hist_ratio, int nbuckets, int bucket_size) {
+void yandex_init(retriever_t *rp, int nbuckets, int hist_ratio) {
 
   s_rp = rp;
   s_dp = rp->dp;
@@ -80,7 +80,7 @@ void yandex_init(retriever_t *rp, int hist_ratio, int nbuckets, int bucket_size)
   s_chunk_range_dc[MIN] = utemp + nchunks*MIN;
 
     // Init buckets
-  buckets_init(nbuckets, bucket_size);
+  buckets_init(nbuckets);
 
   // Init hquantizer
   hquantizer_init(nbuckets, hist_ratio);

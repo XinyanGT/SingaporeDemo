@@ -11,24 +11,27 @@
 static int **s_buckets;
 static int *s_bucket_nelems;  // current number of elements in each bucket
 static int s_nbuckets;
-static int s_bucket_size;    // the maximal number of elements each bucket can hold
+static int *s_bucket_size;    // the maximal number of elements each bucket can hold
+static int s_bucket_initial_size = 4096;
 static int s_effetive_nelems;
 static int *s_a;   // used in buckets_extract
 static int *s_b;
 
-void buckets_init(int nbuckets, int size) {
+void buckets_init(int nbuckets) {
   
   // Allocate space for buckets and bucket sizes
   s_bucket_nelems = (int *) calloc(nbuckets, sizeof(int));
+  s_bucket_size = (int *) malloc(nbuckets * sizeof(int));
   s_buckets = (int **) malloc(nbuckets * sizeof(int*));
+
   int i;
   for (i = 0; i < nbuckets; i++) {
-    s_buckets[i] = (int *) malloc(size * sizeof(int));
+    s_bucket_size[i] = s_bucket_initial_size;
+    s_buckets[i] = (int *) malloc(s_bucket_initial_size * sizeof(int));
   }
   
   // Store information
   s_nbuckets = nbuckets;
-  s_bucket_size = size;
 }
 
 void buckets_start() {
@@ -46,6 +49,7 @@ void buckets_finalize() {
   }
   free(s_buckets);
   free(s_bucket_nelems);
+  free(s_bucket_size);
   free(s_a);
   free(s_b);
 }
@@ -72,7 +76,12 @@ void buckets_fill_range(int *max, int *min, int size) {
   
   for (i = 0; i < size; i++) {
     for (j = min[i]; j <= max[i]; j++) {
-      assert(s_bucket_nelems[j] < s_bucket_size);  // assert bucket is not overflown
+      // Put 1 more element i to bucket j
+      // If bucket j is going to overflow, enlarge the size
+      if (s_bucket_nelems[j] >= s_bucket_size[j]) {
+	s_bucket_size[j] *= 2;
+	s_buckets[j] = (int *)realloc(s_buckets[j], s_bucket_size[j] * sizeof(int));
+      }
       s_buckets[j][s_bucket_nelems[j]++] = i;
     }
   }
