@@ -14,7 +14,7 @@
 int main(int argc, char **argv) {
 
   // Parameters
-  assert(argc > 12);
+  assert(argc > 13);
   char *filename = argv[1];          // name of the bp file to read 
   char *varname = argv[2];           // name of the variable to read
   int row_nprocs = atoi(argv[3]);    // decompose one step of data to processes 
