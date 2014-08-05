@@ -29,7 +29,7 @@ LIBS = $(OPENCV_LIB)
 
 
 .PHONY: release
-release: CFLAGS += -O3
+release: CFLAGS += -O3 -g
 release: $(TARGET) $(TESTS)
 
 .PHONY: debug

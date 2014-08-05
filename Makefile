@@ -28,7 +28,7 @@ release_all: clean_all release
 debug_all: clean_all debug
 
 .PHONY: release
-release: CFLAGS += -O3
+release: CFLAGS += -O3 -g
 release: VERSION = release
 release: $(APPS)
 
