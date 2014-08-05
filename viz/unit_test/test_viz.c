@@ -5,7 +5,8 @@
 int main() {
 
   int row = 256, col = 768;
-  viz_init(row, col);
+  viz_init(row, col, 0.6, -0.6, 200, 50);
+  
   float data[row * col];
   int i,j;
   srand(time(NULL));

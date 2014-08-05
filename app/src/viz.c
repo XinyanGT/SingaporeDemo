@@ -11,6 +11,10 @@ int main(int argc, char **argv) {
   int period = 1;
   int steps = atoi(argv[3]);         // number of steps to read
   int row_nprocs = 1, col_nprocs = 1;
+  float scale_high = 0.2;
+  float scale_low = -0.2;
+  int thresh_high = 160;
+  int thresh_low = 70;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
@@ -29,7 +33,7 @@ int main(int argc, char **argv) {
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
   // Prepare for viz
-  viz_init(lrow, lcol);
+  viz_init(lrow, lcol, scale_high, scale_low, thresh_high, thresh_low);
   float *data = (float *) malloc(lrow * lcol * sizeof(float));
 
   // Deal with data step by step

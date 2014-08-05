@@ -12,15 +12,19 @@ static Mat s_img_gs;
 static Mat s_img_gs_trans;
 static Mat s_thresh1, s_thresh2, s_thresh;
 static int s_size;
-static float s_scale_high = 0.2;
-static float s_scale_low = -0.2;
-static int s_thresh_high = 160;
-static int s_thresh_low = 70;
+static float s_scale_high;
+static float s_scale_low;
+static int s_thresh_high;
+static int s_thresh_low;
 static string s_winname = "Image";
 
-void viz_init(int row, int col) {
+void viz_init(int row, int col, float scale_high, float scale_low, int thresh_high, int thresh_low) {
   s_img = Mat::zeros(row, col, CV_32FC1);
   s_size = row * col;
+  s_scale_high = scale_high;
+  s_scale_low = scale_low;
+  s_thresh_high = thresh_high;
+  s_thresh_low = thresh_low;
 }
 
 
