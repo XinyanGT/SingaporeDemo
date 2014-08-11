@@ -16,7 +16,7 @@ TESTSRC = $(patsubst %, $(TDIR)/test_%.c, $(UNITTESTS))
 TESTS = $(patsubst %, $(EDIR)/test_%, $(UNITTESTS))
 
 TARGET = $(LDIR)/lib$(LIBNAME).a    # library that will be created
-CFLAGS = -I$(IDIR)
+CFLAGS = -I$(IDIR) -Wall
 CPP = g++
 CC = gcc
 

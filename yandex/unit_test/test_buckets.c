@@ -3,13 +3,13 @@
 
 int main(int argc, char **argv) {
 
-  assert(argc >= 5);
+  assert(argc > 3);
   int nbuckets = atoi(argv[1]);
-  int bucket_size = atoi(argv[2]);
-  int low = atoi(argv[3]);
-  int high = atoi(argv[4]);
+  int low = atoi(argv[2]);
+  int high = atoi(argv[3]);
 
-  buckets_init(nbuckets);
+  BUCKETS *bp;
+  bp = buckets_new(nbuckets);
 
   // Fill buckets
   int size = 10;
@@ -18,7 +18,7 @@ int main(int argc, char **argv) {
   int result[10];
   int count;
 
-  buckets_fill_range(max, min, size);
+  buckets_fill_range(bp, max, min, size);
 
   int i;
   printf("max:   ");
@@ -34,12 +34,12 @@ int main(int argc, char **argv) {
   printf("\n");
 
   printf("=======================================================\n");
-  buckets_print();
+  buckets_print(bp);
 
   // Extract from buckets
   printf("=======================================================\n");
   printf("Extract from buckets IN [%d, %d]\n", low, high);
-  buckets_extract_in(low, high, result, &count);
+  buckets_extract_in(bp, low, high, result, &count);
   printf("Result(%d): \n", count);
   for (i = 0; i < count; i++) {
     printf("%d ", result[i]);
@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
 
   printf("=======================================================\n");
   printf("Extract from buckets NOT IN [%d, %d]\n", low, high);
-  buckets_extract_not_in(low, high, result, &count);
+  buckets_extract_not_in(bp, low, high, result, &count);
   printf("Result(%d): \n", count);
   for (i = 0; i < count; i++) {
     printf("%d ", result[i]);
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
    
   // Clear 
-  buckets_finalize();
+  buckets_finalize(bp);
 
   return 0;
 }

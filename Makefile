@@ -17,6 +17,7 @@ INCS = -I$(YANDEX_DIR)/include -I$(UTILS_DIR)/include -I$(VIZ_DIR)/include $(ADI
 LIBS = -L$(YANDEX_DIR)/lib -lyandex -L$(UTILS_DIR)/lib -lutils -L$(VIZ_DIR)/lib -lviz $(ADIOS_LIB) $(OPENCV_LIB)
 
 CC = mpicc
+CFLAGS = -Wall
 
 .PHONY: default
 default: release

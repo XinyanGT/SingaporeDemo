@@ -46,4 +46,5 @@ int main(int argc, char **argv) {
   reader_finalize();
   MPI_Finalize();
 
+  return 0;
 }

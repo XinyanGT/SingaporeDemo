@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
   // Further decompose by chunks, for computing max and min to index
-  decomp_t *idp, *wdp;
+  decomp_t *idp;
   retriever_t *rp;
 
   idp = decomp_init(lrow, lcol, row_nchunks, col_nchunks);   // for index

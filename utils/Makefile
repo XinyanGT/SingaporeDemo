@@ -12,7 +12,7 @@ BUILD = build
 
 TARGET = $(LDIR)/lib$(LIBNAME).a    # library that will be created
 CC = mpicc
-CFLAGS = -I$(IDIR)
+CFLAGS = -I$(IDIR) -Wall
 
 OBJECTS = $(patsubst %, $(ODIR)/%.o, $(MODULES))
 HEADERS = $(patsubst %, $(IDIR)/%.h, $(MODULES))

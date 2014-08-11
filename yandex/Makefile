@@ -1,5 +1,5 @@
-MODULES = quantizer buckets yandex hquantizer
-UNITTESTS = quantizer buckets yandex hquantizer
+MODULES = quantizer buckets yandex histquan
+UNITTESTS = quantizer buckets yandex histquan
 LIBNAME = yandex
 UTILS_DIR = ../utils
 
@@ -13,7 +13,7 @@ BUILD = build
 
 TARGET = $(LDIR)/lib$(LIBNAME).a    # library that will be created
 CC = mpicc
-CFLAGS = -I$(IDIR) -I$(UTILS_DIR)/include
+CFLAGS = -Wall -I$(IDIR) -I$(UTILS_DIR)/include
 
 OBJECTS = $(patsubst %, $(ODIR)/%.o, $(MODULES))
 HEADERS = $(patsubst %, $(IDIR)/%.h, $(MODULES))

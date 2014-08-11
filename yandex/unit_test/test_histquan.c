@@ -1,12 +1,15 @@
 #include <assert.h>
-#include "hquantizer.h"
+#include "histquan.h"
 
 
 int main(int argc, char **argv) {
   //  char *filename = argv[1];
   //  char *varname = argv[2];
-  //  assert(argc >= 2);
+  
+  assert(argc >= 2);
 
+  HISTQUAN *hp;
+  
   int level = atoi(argv[1]);
   printf("Quantization level: %d\n", level);
   
@@ -20,9 +23,9 @@ int main(int argc, char **argv) {
   float singleton = 5.4;
   int singleton_dc;
     
-  hquantizer_init(level, ratio);
-  hquantizer_restart(data, size);
-  hquantizer_quantize(data, data_dc, size);
+  hp = histquan_new(level, ratio);
+  histquan_restart(hp, data, size);
+  histquan_quantize(hp, data, data_dc, size);
   int i;
   printf("Before quantization: \n");
   for (i = 0; i < size; i++) {
@@ -36,9 +39,9 @@ int main(int argc, char **argv) {
   printf("\n");
   
   printf("Quantize a singleton: %.3f\n", singleton);
-  singleton_dc = hquantizer_quantize_singleton(singleton);
+  singleton_dc = histquan_quantize_singleton(hp, singleton);
   printf("Result: %d\n", singleton_dc);
 
-  hquantizer_finalize();
+  histquan_finalize(hp);
   return 0;
 }

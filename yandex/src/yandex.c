@@ -9,129 +9,122 @@
 
 #include "yandex.h"
 #include "buckets.h"
-#include "hquantizer.h"
+#include "histquan.h"
 
-#define MAX         0    // index of max
-#define MIN         1
-
-static float *s_chunk_min, *s_chunk_max;
-static float *s_chunk_range[2];
-static int *s_chunk_range_dc[2];
-static retriever_t *s_rp;
-static decomp_t *s_dp;
-static int s_first_step;
-static float *s_verify_data;
-
+static int MAX = 0;    // index of max
+static int MIN = 1;
 
 // Compute min max for a step of data
-static void yandex_shrunk(const float *I) {
-  int nchunks = s_dp->nchunks;
+static void yandex_shrunk(YANDEX *yp, const float *I) {
+  int nchunks = yp->dp->nchunks;
   int i, j, k;
   int lrow, lcol, orow, ocol;
   float max, min, elem;
   for (i = 0; i < nchunks; i++) {
-    decomp_get_pos(s_dp, i, &lrow, &lcol, &orow, &ocol);
-    max = I[orow *(s_dp->col) + ocol];
+    decomp_get_pos(yp->dp, i, &lrow, &lcol, &orow, &ocol);
+    max = I[orow *(yp->dp->col) + ocol];
     min = max;
     for (j = orow; j < orow+lrow; j++) {
       for (k = ocol; k < ocol+lcol; k++) {
-	elem = I[j*(s_dp->col) + k];
+	elem = I[j*(yp->dp->col) + k];
 	max = elem > max ? elem : max;
 	min = elem < min ? elem : min;
       }
     }
-    s_chunk_max[i] = max;
-    s_chunk_min[i] = min;
+    yp->chunk_max[i] = max;
+    yp->chunk_min[i] = min;
   }
 }
 
 // Update min max record
-static void yandex_update_minmax(I) {
+static void yandex_update_minmax(YANDEX *yp) {
   int i;
-  int nchunks = s_dp->nchunks;
-  if (s_first_step) {
-    memcpy(s_chunk_range[MAX], s_chunk_max, nchunks * sizeof(float));
-    memcpy(s_chunk_range[MIN], s_chunk_min, nchunks * sizeof(float));
-    s_first_step = 0;
+  int nchunks = yp->dp->nchunks;
+  if (yp->first_step) {
+    memcpy(yp->chunk_range[MAX], yp->chunk_max, nchunks * sizeof(float));
+    memcpy(yp->chunk_range[MIN], yp->chunk_min, nchunks * sizeof(float));
+    yp->first_step = 0;
   } else {
-    for (i = 0; i < s_dp->nchunks; i++) {
-      s_chunk_range[MAX][i] = s_chunk_max[i] > s_chunk_range[MAX][i] ? s_chunk_max[i] : s_chunk_range[MAX][i];
-      s_chunk_range[MIN][i] = s_chunk_min[i] < s_chunk_range[MIN][i] ? s_chunk_min[i] : s_chunk_range[MIN][i];
+    for (i = 0; i < yp->dp->nchunks; i++) {
+      yp->chunk_range[MAX][i] = yp->chunk_max[i] > yp->chunk_range[MAX][i] ? yp->chunk_max[i] : yp->chunk_range[MAX][i];
+      yp->chunk_range[MIN][i] = yp->chunk_min[i] < yp->chunk_range[MIN][i] ? yp->chunk_min[i] : yp->chunk_range[MIN][i];
     }
   }
 }
 
 
-void yandex_init(retriever_t *rp, int nbuckets, int hist_ratio) {
+YANDEX *yandex_new(retriever_t *rp, int nbuckets, int hist_ratio) {
 
-  s_rp = rp;
-  s_dp = rp->dp;
+  YANDEX *yp = (YANDEX *) malloc(sizeof(YANDEX));
+  yp->rp = rp;
+  yp->dp = rp->dp;
   
   // Allocate space
-  int nchunks = s_dp->nchunks;
-  s_chunk_min = (float *) malloc(nchunks * sizeof(float));
-  s_chunk_max = (float *) malloc(nchunks * sizeof(float));
+  int nchunks = yp->dp->nchunks;
+  yp->chunk_min = (float *) malloc(nchunks * sizeof(float));
+  yp->chunk_max = (float *) malloc(nchunks * sizeof(float));
   float *dtemp  = (float *) malloc(2 * nchunks * sizeof(float));
-  s_chunk_range[MIN] = dtemp + nchunks*MIN;
-  s_chunk_range[MAX] = dtemp + nchunks*MAX;
+  yp->chunk_range[MIN] = dtemp + nchunks*MIN;
+  yp->chunk_range[MAX] = dtemp + nchunks*MAX;
 
   int *utemp = (int *) malloc(2 * nchunks * sizeof(int));
-  s_chunk_range_dc[MAX] = utemp + nchunks*MAX;
-  s_chunk_range_dc[MIN] = utemp + nchunks*MIN;
+  yp->chunk_range_dc[MAX] = utemp + nchunks*MAX;
+  yp->chunk_range_dc[MIN] = utemp + nchunks*MIN;
 
-    // Init buckets
-  buckets_init(nbuckets);
+  // Init buckets
+  yp->bp = buckets_new(nbuckets);
 
-  // Init hquantizer
-  hquantizer_init(nbuckets, hist_ratio);
+  // Init histquan
+  yp->hp = histquan_new(nbuckets, hist_ratio);
 
+  return yp;
 }
 
 
 // Start a new period indexing
-void yandex_start() {
-  s_first_step = 1;
+void yandex_start(YANDEX *yp) {
+  yp->first_step = 1;
   // Restart buckets
-  buckets_start();
+  buckets_start(yp->bp);
 }
 
 
 // End of a period, build index
-void yandex_stop() {
-    int nchunks = s_dp->nchunks;
-    hquantizer_restart(s_chunk_range[0], nchunks*2);
-    hquantizer_quantize(s_chunk_range[0], s_chunk_range_dc[0], nchunks*2);
-    buckets_fill_range(s_chunk_range_dc[MAX], s_chunk_range_dc[MIN], nchunks);
+void yandex_stop(YANDEX *yp) {
+    int nchunks = yp->dp->nchunks;
+    histquan_restart(yp->hp, yp->chunk_range[0], nchunks*2);
+    histquan_quantize(yp->hp, yp->chunk_range[0], yp->chunk_range_dc[0], nchunks*2);
+    buckets_fill_range(yp->bp, yp->chunk_range_dc[MAX], yp->chunk_range_dc[MIN], nchunks);
 }
 
-void yandex_update() {
+void yandex_update(YANDEX *yp) {
 
   // Get min max for this step
-  float *I = retriever_get_laststep(s_rp);
-  yandex_shrunk(I);
+  float *I = retriever_get_laststep(yp->rp);
+  yandex_shrunk(yp, I);
   
   // Update min max record
-  yandex_update_minmax();
+  yandex_update_minmax(yp);
 }
 
 
-void yandex_query(float low_bound, float high_bound, int *query_result, int *count, yandex_query_type type) {
+void yandex_query(YANDEX *yp, float low_bound, float high_bound, int *query_result, int *count, yandex_query_type type) {
 
   int low_dc;
   int high_dc;
 
   assert(low_bound <= high_bound);
   
-  low_dc = hquantizer_quantize_singleton(low_bound);
-  high_dc = hquantizer_quantize_singleton(high_bound);
+  low_dc = histquan_quantize_singleton(yp->hp, low_bound);
+  high_dc = histquan_quantize_singleton(yp->hp, high_bound);
 
   //  printf("low: %d, high: %d\n", low_dc, high_dc);
   switch (type) {
   case YANDEX_IN:    
-    buckets_extract_in(low_dc, high_dc, query_result, count);
+    buckets_extract_in(yp->bp, low_dc, high_dc, query_result, count);
     break;
   case YANDEX_NOT_IN:
-    buckets_extract_not_in(low_dc, high_dc, query_result, count);
+    buckets_extract_not_in(yp->bp, low_dc, high_dc, query_result, count);
     break;
   }
 }
@@ -140,7 +133,7 @@ void yandex_query(float low_bound, float high_bound, int *query_result, int *cou
 /*
  * Verify whether yandex query result is valid
  */
-int yandex_verify(float low_bound, float high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type) {
+int yandex_verify(YANDEX *yp, float low_bound, float high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type) {
   
   // hit: the chunk contains value in the range
   // has: the chunk number appears in query result
@@ -152,19 +145,19 @@ int yandex_verify(float low_bound, float high_bound, int *query_result, int coun
   int i, j;
   int chunksize, nexact, nrough;
   int hitflag, okflag, hasflag;
-  int nchunks = s_dp->nchunks;
+  int nchunks = yp->dp->nchunks;
   nexact = nrough = 0;
   okflag = 1;
-  if (s_verify_data == NULL) {
-    s_verify_data = (float *) malloc(s_dp->max_chunksize * s_rp->period * sizeof(float));
+  if (yp->verify_data == NULL) {
+    yp->verify_data = (float *) malloc(yp->dp->max_chunksize * yp->rp->period * sizeof(float));
   }
-  data = s_verify_data;
+  data = yp->verify_data;
 
   // Go over all data chunk by chunk
   for (i = 0; i < nchunks; i++) {
     
     hitflag = hasflag = 0; 
-    chunksize = retriever_get_chunk(s_rp, i, data);
+    chunksize = retriever_get_chunk(yp->rp, i, data);
     
     // Go over every data point
     for (j = 0; j < chunksize; j++) {
@@ -208,8 +201,8 @@ int yandex_verify(float low_bound, float high_bound, int *query_result, int coun
       printf("ERROR. Query result failed verification\n");
     }
     printf("Rough: %d[%.2f%%]. Exact: %d[%.2f%%]. Ratio: %.2f%%\n",
-   	   nrough, (float)nrough/(s_rp->period*(s_dp->size))*100,
-	   nexact, (float)nexact/(s_rp->period*(s_dp->size))*100,
+   	   nrough, (float)nrough/(yp->rp->period*(yp->dp->size))*100,
+	   nexact, (float)nexact/(yp->rp->period*(yp->dp->size))*100,
 	   (float)nrough / nexact*100);
   }
 
@@ -217,12 +210,13 @@ int yandex_verify(float low_bound, float high_bound, int *query_result, int coun
 }
 
 
-void yandex_finalize() {
-  free(s_verify_data);
-  free(s_chunk_range[0]);
-  free(s_chunk_range_dc[0]);
-  buckets_finalize();
-  hquantizer_finalize();  
+void yandex_finalize(YANDEX *yp) {
+  free(yp->verify_data);
+  free(yp->chunk_range[0]);
+  free(yp->chunk_range_dc[0]);
+  buckets_finalize(yp->bp);
+  histquan_finalize(yp->hp);
+  free(yp);
 }
 
  

@@ -22,7 +22,6 @@ static uint64_t s_current_step;          // current logical step
 static uint64_t s_steps_per_adios_step;  // how many logical steps contained in an adios step
 static float s_timeout_sec = 1.0;
 static int s_is_adios_3d;                // whether in adios it's a 3d var
-static int s_rank, s_nprocs;
 static decomp_t *s_dp;
 static uint64_t s_row, s_col, s_lrow, s_lcol, s_orow, s_ocol;
 
@@ -30,7 +29,6 @@ static uint64_t s_row, s_col, s_lrow, s_lcol, s_orow, s_ocol;
 // Return decomp_t which indicates how data is decomposed
 // reader will free it when finalizing
 decomp_t *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method, int row_nprocs, int col_nprocs) {
-  MPI_Status status; 
 
   // ADIOS Init
   s_method = method;

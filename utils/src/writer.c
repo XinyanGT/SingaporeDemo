@@ -9,7 +9,6 @@
 #include "adios.h"
 
 static MPI_Comm s_comm = MPI_COMM_WORLD;
-static int buffer_size = 10;
 static int64_t s_adios_group, s_adios_file;
 static int64_t *s_idp;
 static decomp_t *s_dp;

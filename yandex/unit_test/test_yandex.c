@@ -3,7 +3,7 @@
 int main() {
 
   int row = 4, col = 6;
-  int nbuckets = 40, bucket_size = 100;
+  int nbuckets = 40;
   int hist_ratio = 5;
   int period = 2;
   int i, j;
@@ -25,37 +25,36 @@ int main() {
   int col_nchunks = 6;
   int result[row * col];
   int count;
-  float data_query[period * col * row];
   float chunk[period*col*row];
   decomp_t *dp;
   retriever_t *rp;
+  YANDEX *yp;
 
   // Init
   dp = decomp_init(row, col, row_nchunks, col_nchunks);
   rp = retriever_init(dp, period);
-  yandex_init(rp, nbuckets, hist_ratio);
-
+  yp = yandex_new(rp, nbuckets, hist_ratio);
+  
   // Start a period
-  yandex_start();
+  yandex_start(yp);
 
   // Feed data
   retriever_feed(rp, data1);
-  yandex_update();
+  yandex_update(yp);
   
   retriever_feed(rp, data2);
-  yandex_update();
+  yandex_update(yp);
 
   // Stop a period
-  yandex_stop();
+  yandex_stop(yp);
 
   // Query
   int chunksize;
-  int okflag, nexact, nfuzzy;
-
-
+  int nexact, nfuzzy;
+  int okflag;
   
-  yandex_query(low, high, result, &count, YANDEX_IN);
-  buckets_print();
+  yandex_query(yp, low, high, result, &count, YANDEX_IN);
+  buckets_print(yp->bp);
   
   printf("=======================================================\n");
   printf("Query range: %.2f -- %.2f\n", low, high);
@@ -79,14 +78,12 @@ int main() {
   }
 
 
-  okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_IN);
-
-
+  okflag = yandex_verify(yp, low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_IN);
 
 
   low = -1;
   high = 3;
-  yandex_query(low, high, result, &count, YANDEX_NOT_IN);
+  yandex_query(yp, low, high, result, &count, YANDEX_NOT_IN);
   printf("=======================================================\n");
   printf("Query not in range: %.2f -- %.2f\n", low, high);
   printf("Result(%d)\n", count);
@@ -110,19 +107,12 @@ int main() {
   }
 
 
-  okflag = yandex_verify(low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_NOT_IN);
+  okflag = yandex_verify(yp, low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_NOT_IN);
   
   
-  /* yandex_get(result, count, data_query); */
-
-  /* for (i = 0; i < count * period; i++) { */
-  /*   printf("%.2f ", data_query[i]); */
-  /* } */
-  /* printf("\n"); */
-
   decomp_finalize(dp);
   retriever_finalize(rp);
-  yandex_finalize();
+  yandex_finalize(yp);
 
   return 0;
 }

@@ -1,6 +1,7 @@
 #include "decomp.h"
 
 decomp_t *decomp_init(int row, int col, int row_nchunks, int col_nchunks) {
+  
   decomp_t *dp = (decomp_t *) malloc(1 * sizeof(decomp_t));
   dp->orowg = 0;
   dp->ocolg = 0;
@@ -20,7 +21,14 @@ decomp_t *decomp_init(int row, int col, int row_nchunks, int col_nchunks) {
   return dp;
 }
 
-
+/*
+decomp_t *decomp_copy(decomp_t *dp) {
+  decompt_t *dp_new = (decomp_t *) malloc(sizeof(decomp_t));
+  memcpy(dp_new, dp, sizeof(decomp_t));
+  return dp_new;
+}
+*/
+		     
 // Get offsets and positions of a subchunk in dp, related to its superchunk
 // For example, row = 2400, row_nchunks = 500
 // Then first part (0-99) should have 4 elements, and second part (100-499) should have 5
