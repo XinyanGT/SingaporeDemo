@@ -8,8 +8,8 @@
 #include "retriever.h"
 #include "decomp.h"
 
-retriever_t *retriever_init(decomp_t *dp, int period) {
-  retriever_t *rp = (retriever_t *) malloc(1 * sizeof(retriever_t));
+RETRIEVER *retriever_new(DECOMP *dp, int period) {
+  RETRIEVER *rp = (RETRIEVER *) malloc(1 * sizeof(RETRIEVER));
   rp->period = period;
   rp->current_step = 0;
   rp->data = (float *) malloc(period * dp->size * sizeof(float));
@@ -17,7 +17,7 @@ retriever_t *retriever_init(decomp_t *dp, int period) {
   return rp;
 }
 
-void retriever_feed(retriever_t *rp, float *I) {
+void retriever_feed(RETRIEVER *rp, float *I) {
   // Store data so that they can be queried
   // Data can be compressed or reorganized here
   memcpy(rp->data + rp->dp->size*rp->current_step, I, rp->dp->size*sizeof(float));
@@ -26,18 +26,18 @@ void retriever_feed(retriever_t *rp, float *I) {
 }
 
 // Return pointer to that step data
-float *retriever_get_step(retriever_t *rp, int step) {
+float *retriever_get_step(RETRIEVER *rp, int step) {
   return rp->data + rp->dp->size*step;
 }
 
-float *retriever_get_laststep(retriever_t *rp) {
+float *retriever_get_laststep(RETRIEVER *rp) {
   int step;
   step = rp->current_step == 0 ? rp->period-1 : rp->current_step-1;
   return retriever_get_step(rp, step);
 }
 
 // Return size
-int retriever_get_chunk(retriever_t *rp, int pos, float *data) {
+int retriever_get_chunk(RETRIEVER *rp, int pos, float *data) {
   int i, j, k;
   int lrow, lcol, orow, ocol;
 
@@ -53,14 +53,14 @@ int retriever_get_chunk(retriever_t *rp, int pos, float *data) {
   return rp->period * lrow * lcol;
 }
 
-/* void retriever_get(retriever_t *rp, int *pos, int pos_count, float *data) { */
+/* void retriever_get(RETRIEVER *rp, int *pos, int pos_count, float *data) { */
 /*   int i; */
 /*   for (i = 0; i < pos_count; i++) { */
 /*     retriever_get_chunk(pos[i], data+i*rp->period); */
 /*   } */
 /* } */
 
-void retriever_finalize(retriever_t *rp) {
+void retriever_free(RETRIEVER *rp) {
   free(rp->data);
   free(rp);
 }

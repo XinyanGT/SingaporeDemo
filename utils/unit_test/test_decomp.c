@@ -2,7 +2,7 @@
 
 int main() {
   
-  decomp_t *dpA, *dpB, *dpC;
+  DECOMP *dpA, *dpB, *dpC;
   int lrow, lcol, orow, ocol;
   int row, col, row_nchunks, col_nchunks;
   int i;
@@ -11,7 +11,7 @@ int main() {
   col = 24 ;
   row_nchunks = 3;
   col_nchunks = 5;
-  dpA = decomp_init(row, col, row_nchunks, col_nchunks);
+  dpA = decomp_new(row, col, row_nchunks, col_nchunks);
   printf("dpA g: %d X %d, chunks: %d X %d\n", row, col, row_nchunks, col_nchunks);
 
   for (i = 0; i < row_nchunks * col_nchunks; i++) {
@@ -24,7 +24,7 @@ int main() {
   col = 4 ;
   row_nchunks = 3;
   col_nchunks = 2;
-  dpB = decomp_init(row, col, row_nchunks, col_nchunks);
+  dpB = decomp_new(row, col, row_nchunks, col_nchunks);
   printf("dpB g: %d X %d, chunks: %d X %d\n", row, col, row_nchunks, col_nchunks);
   for (i = 0; i < row_nchunks * col_nchunks; i++) {
     decomp_get_pos(dpB, i, &lrow, &lcol, &orow, &ocol);
@@ -39,8 +39,8 @@ int main() {
     printf("dpC [%d] l: %d X %d, o: %d %d\n", i, lrow, lcol, orow, ocol);
   }
 
-  decomp_finalize(dpA);
-  decomp_finalize(dpB);
-  decomp_finalize(dpC);
+  decomp_free(dpA);
+  decomp_free(dpB);
+  decomp_free(dpC);
   return 0;
 }

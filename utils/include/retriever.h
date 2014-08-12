@@ -4,19 +4,19 @@
 #include "common.h"
 #include "decomp.h"
 
-typedef struct retriever_t {
+typedef struct RETRIEVER {
   int period;
   int current_step;
   float *data;
-  decomp_t *dp;
-} retriever_t;
+  DECOMP *dp;
+} RETRIEVER;
   
-retriever_t *retriever_init(decomp_t *dp, int period);
-void retriever_feed(retriever_t *rp, float *I);
-float *retriever_get_step(retriever_t *rp, int step);
-float *retriever_get_laststep(retriever_t *rp);
-int retriever_get_chunk(retriever_t *rp, int pos, float *data);
-void retriever_finalize(retriever_t *rp);
-//void retriever_get(retriever_t *rp, int *pos, int pos_count, float *data);
+RETRIEVER *retriever_new(DECOMP *dp, int period);
+void retriever_feed(RETRIEVER *rp, float *I);
+float *retriever_get_step(RETRIEVER *rp, int step);
+float *retriever_get_laststep(RETRIEVER *rp);
+int retriever_get_chunk(RETRIEVER *rp, int pos, float *data);
+void retriever_free(RETRIEVER *rp);
+//void retriever_get(RETRIEVER *rp, int *pos, int pos_count, float *data);
 
 #endif

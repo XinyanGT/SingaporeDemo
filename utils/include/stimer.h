@@ -3,10 +3,17 @@
 
 #include "common.h"
 
-void stimer_start();
-void stimer_stop();
+typedef struct STIMER {
+  struct timespec start;
+  struct timespec end;
+} STIMER;
 
-double stimer_get_interval();
+
+STIMER *stimer_new();
+void stimer_start(STIMER *sp);
+void stimer_stop(STIMER *sp);
+double stimer_get_interval(STIMER *sp);
+void stimer_free(STIMER *sp);
 
 #endif
 

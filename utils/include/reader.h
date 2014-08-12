@@ -5,7 +5,7 @@
 #include "common.h"
 #include "adios_read.h"
 
-decomp_t *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method, int row_nprocs, int col_nprocs);
+DECOMP *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method, int row_nprocs, int col_nprocs);
 void reader_get_dim(int *row, int *col);
 void reader_get_dim_local(int *row, int *col, int *orow, int *ocol);
 void reader_read(float *data);

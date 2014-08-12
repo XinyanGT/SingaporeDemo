@@ -11,6 +11,6 @@ int quantizer_quantize_singleton(float ct);
 
 void quantizer_quantize(float *ct, int *data_dc, int size);
 
-void quantizer_finalize();
+void quantizer_free();
 		      
 #endif

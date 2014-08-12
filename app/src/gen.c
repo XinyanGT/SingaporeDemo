@@ -41,13 +41,14 @@ int main(int argc, char **argv) {
   double write_time = 0;
   unsigned int total_nrough = 0;
   unsigned int total_nexact = 0;
+  STIMER *sp = stimer_new();
 
   // Decompose by processes, to read different portions of data
-  decomp_t *rdp;
-  stimer_start();
+  DECOMP *rdp;
+  stimer_start(sp);
   rdp = reader_init(filename, varname, ADIOS_READ_METHOD_BP, row_nprocs, col_nprocs);  // for reader
-  stimer_stop();
-  read_time += stimer_get_interval();
+  stimer_stop(sp);
+  read_time += stimer_get_interval(sp);
 
   int row, col;
   int lrow, lcol, orow, ocol;
@@ -55,29 +56,30 @@ int main(int argc, char **argv) {
   reader_get_dim_local(&lrow, &lcol, &orow, &ocol);
 
   // Further decompose by chunks, for computing max and min to index
-  decomp_t *idp, *wdp;
-  retriever_t *rp;
+  DECOMP *idp, *wdp;
+  RETRIEVER *rp;
 
-  idp = decomp_init(lrow, lcol, row_nchunks, col_nchunks);   // for index
+  idp = decomp_new(lrow, lcol, row_nchunks, col_nchunks);   // for index
   wdp = decomp_focus(rdp, rank, idp);    // for writer
 
-  stimer_start();
-  rp = retriever_init(idp, period);
-  stimer_stop();
-  retrieve_time += stimer_get_interval();
+  stimer_start(sp);
+  rp = retriever_new(idp, period);
+  stimer_stop(sp);
+  retrieve_time += stimer_get_interval(sp);
 
-  stimer_start();
+  stimer_start(sp);
   writer_init("test.bp", "vol", "MPI", wdp, row, col, period);
-  stimer_stop();
-  write_time += stimer_get_interval();
+  stimer_stop(sp);
+  write_time += stimer_get_interval(sp);
   
   float *data = (float *) malloc(lrow * lcol * sizeof(float));
   float *chunk = (float *) malloc(idp->max_chunksize * period * sizeof(float));
-
-  stimer_start();
-  yandex_init(rp, nbuckets, hist_ratio);
-  stimer_stop();
-  build_time += stimer_get_interval();
+  YANDEX *yp;
+  
+  stimer_start(sp);
+  yp = yandex_new(rp, nbuckets, hist_ratio);
+  stimer_stop(sp);
+  build_time += stimer_get_interval(sp);
 
   int i, j;
   int result[idp->nchunks];
@@ -90,75 +92,75 @@ int main(int argc, char **argv) {
   while (i < steps || steps < 0) {
     // First step in a period
     if (i % period == 0) {
-      stimer_start();
-      yandex_start();
-      stimer_stop();
-      build_time += stimer_get_interval();
+      stimer_start(sp);
+      yandex_start(yp);
+      stimer_stop(sp);
+      build_time += stimer_get_interval(sp);
     }
 
     // Read data
-    stimer_start();
+    stimer_start(sp);
     reader_read(data);
-    stimer_stop();
-    read_time += stimer_get_interval();
+    stimer_stop(sp);
+    read_time += stimer_get_interval(sp);
 
     // Store data for later retrieval
-    stimer_start();
+    stimer_start(sp);
     retriever_feed(rp, data);
-    stimer_stop();
-    retrieve_time += stimer_get_interval();
+    stimer_stop(sp);
+    retrieve_time += stimer_get_interval(sp);
 
     // Update index building
-    stimer_start();
-    yandex_update();
-    stimer_stop();
-    build_time += stimer_get_interval();
+    stimer_start(sp);
+    yandex_update(yp);
+    stimer_stop(sp);
+    build_time += stimer_get_interval(sp);
 
     // Last step in a period
     if ( (i+1) % period == 0) {
       // Build index
-      stimer_start();
-      yandex_stop();
-      stimer_stop();
-      build_time += stimer_get_interval();
+      stimer_start(sp);
+      yandex_stop(yp);
+      stimer_stop(sp);
+      build_time += stimer_get_interval(sp);
       
       // Query
-      stimer_start();
-      yandex_query(low, high, result, &count, type);
-      stimer_stop();
-      query_time += stimer_get_interval();
+      stimer_start(sp);
+      yandex_query(yp, low, high, result, &count, type);
+      stimer_stop(sp);
+      query_time += stimer_get_interval(sp);
 	
       // Print buckets
       /* buckets_print(); */
       // Verify query results
-      okflag = yandex_verify(low, high, result, count, &nexact, &nrough, 0, type);
+      okflag = yandex_verify(yp, low, high, result, count, &nexact, &nrough, 0, type);
       total_nrough += nrough;
       total_nexact += nexact;
       assert(okflag);
       
       // Write
-      stimer_start();
+      stimer_start(sp);
       writer_start(result, count);
-      stimer_stop();
-      write_time += stimer_get_interval();
+      stimer_stop(sp);
+      write_time += stimer_get_interval(sp);
       
       for (j = 0; j < count; j++) {
-	stimer_start();
+	stimer_start(sp);
 	retriever_get_chunk(rp, result[j], chunk);
-	stimer_stop();
-	retrieve_time += stimer_get_interval();
+	stimer_stop(sp);
+	retrieve_time += stimer_get_interval(sp);
 
-	stimer_start();
+	stimer_start(sp);
 	writer_write(result[j], chunk);
-	stimer_stop();
-	write_time += stimer_get_interval();
+	stimer_stop(sp);
+	write_time += stimer_get_interval(sp);
 	
       }
 
-      stimer_start();
+      stimer_start(sp);
       writer_stop();
-      stimer_stop();
-      write_time += stimer_get_interval();
+      stimer_stop(sp);
+      write_time += stimer_get_interval(sp);
     }
     i++;
   }
@@ -167,31 +169,32 @@ int main(int argc, char **argv) {
   free(chunk);
   free(data);
 
-  stimer_start();
+  stimer_start(sp);
   reader_finalize();
-  stimer_stop();
-  read_time += stimer_get_interval();
+  stimer_stop(sp);
+  read_time += stimer_get_interval(sp);
 
-  stimer_start();
+  stimer_start(sp);
   writer_finalize();
-  stimer_stop();
-  write_time += stimer_get_interval();
+  stimer_stop(sp);
+  write_time += stimer_get_interval(sp);
   
-  decomp_finalize(idp);
-  decomp_finalize(wdp);
+  decomp_free(idp);
+  decomp_free(wdp);
 
-  stimer_start();
-  retriever_finalize(rp);
-  stimer_stop();
-  retrieve_time += stimer_get_interval();
+  stimer_start(sp);
+  retriever_free(rp);
+  stimer_stop(sp);
+  retrieve_time += stimer_get_interval(sp);
 
-  stimer_start();
-  yandex_finalize();
-  stimer_stop();
-  build_time += stimer_get_interval();
+  stimer_start(sp);
+  yandex_free(yp);
+  stimer_stop(sp);
+  build_time += stimer_get_interval(sp);
   
   MPI_Finalize();
 
+  stimer_free(sp);
   // Display performance information
   printf("============================================================\n");
   printf("Timing Information(in sec)\n");

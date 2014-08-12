@@ -4,17 +4,30 @@
 #include <stdio.h>
 
 
-static struct timespec start = {0, 0}, end = {0, 0};
+STIMER *stimer_new() {
+  
+  STIMER *sp = (STIMER *) malloc(sizeof(STIMER));
+  sp->start.tv_sec = 0;
+  sp->start.tv_nsec = 0;
+  sp->end.tv_sec = 0;
+  sp->end.tv_nsec = 0;
 
-void stimer_start() {
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start);  
+  return sp;
 }
 
-void stimer_stop() {
-  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &end);
+void stimer_start(STIMER *sp) {
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &sp->start);  
 }
 
-double stimer_get_interval() {
-  return  ((double)end.tv_sec + 1.0e-9*end.tv_nsec) -
-       ((double)start.tv_sec + 1.0e-9*start.tv_nsec);
+void stimer_stop(STIMER *sp) {
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &sp->end);
+}
+
+double stimer_get_interval(STIMER *sp) {
+  return  ((double)sp->end.tv_sec + 1.0e-9*sp->end.tv_nsec) -
+       ((double)sp->start.tv_sec + 1.0e-9*sp->start.tv_nsec);
+}
+
+void stimer_free(STIMER *sp) {
+  free(sp);
 }

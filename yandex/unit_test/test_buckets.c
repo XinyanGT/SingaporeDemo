@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
 
    
   // Clear 
-  buckets_finalize(bp);
+  buckets_free(bp);
 
   return 0;
 }

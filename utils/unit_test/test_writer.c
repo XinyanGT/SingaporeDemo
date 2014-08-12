@@ -28,6 +28,8 @@ int main(int argc, char **argv) {
   char *varname = argv[2];           // name of the variable to read
   int row_nprocs = atoi(argv[3]);    // decompose one step of data to processes 
   int col_nprocs = atoi(argv[4]);
+  // Note: row_nchunks x col_nchunks has to be greater or equal to 10
+  // in this test case
   int row_nchunks = atoi(argv[5]);   // further decompose, a chunk is a unit to compute min and mx
   int col_nchunks = atoi(argv[6]);
   int period = atoi(argv[7]);
@@ -39,7 +41,7 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(comm, &rank);
 
   // Decompose by processes, to read different portions of data
-  decomp_t *rdp;
+  DECOMP *rdp;
   rdp = reader_init(filename, varname, ADIOS_READ_METHOD_BP, row_nprocs, col_nprocs);  // for reader
 
   int row, col;
@@ -50,13 +52,13 @@ int main(int argc, char **argv) {
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
   // Further decompose by chunks, for computing max and min to index
-  decomp_t *idp, *wdp;
-  retriever_t *rp;
+  DECOMP *idp, *wdp;
+  RETRIEVER *rp;
 
-  idp = decomp_init(lrow, lcol, row_nchunks, col_nchunks);   // for index
+  idp = decomp_new(lrow, lcol, row_nchunks, col_nchunks);   // for index
   wdp = decomp_focus(rdp, rank, idp);    // for writer
   
-  rp = retriever_init(idp, period);
+  rp = retriever_new(idp, period);
   
   writer_init("test.bp", "vol", "MPI", wdp, row, col, period);
   
@@ -101,9 +103,9 @@ int main(int argc, char **argv) {
   free(data);
   reader_finalize();
   writer_finalize();
-  decomp_finalize(idp);
-  decomp_finalize(wdp);
-  retriever_finalize(rp);
+  decomp_free(idp);
+  decomp_free(wdp);
+  retriever_free(rp);
   MPI_Finalize();
 
   return 0;

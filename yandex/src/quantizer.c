@@ -51,5 +51,5 @@ void quantizer_quantize(float *data, int *data_dc, int size) {
   }
 }
 
-void quantizer_finalize() {
+void quantizer_free() {
 }

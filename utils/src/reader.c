@@ -22,13 +22,13 @@ static uint64_t s_current_step;          // current logical step
 static uint64_t s_steps_per_adios_step;  // how many logical steps contained in an adios step
 static float s_timeout_sec = 1.0;
 static int s_is_adios_3d;                // whether in adios it's a 3d var
-static decomp_t *s_dp;
+static DECOMP *s_dp;
 static uint64_t s_row, s_col, s_lrow, s_lcol, s_orow, s_ocol;
 
 
-// Return decomp_t which indicates how data is decomposed
+// Return DECOMP which indicates how data is decomposed
 // reader will free it when finalizing
-decomp_t *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method, int row_nprocs, int col_nprocs) {
+DECOMP *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method, int row_nprocs, int col_nprocs) {
 
   // ADIOS Init
   s_method = method;
@@ -62,8 +62,8 @@ decomp_t *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD meth
   }
   
   
-  decomp_t *dp;
-  dp = decomp_init(row, col, row_nprocs, col_nprocs);
+  DECOMP *dp;
+  dp = decomp_new(row, col, row_nprocs, col_nprocs);
   int lr, lc, or, oc;
   decomp_get_pos(dp, rank, &lr, &lc, &or, &oc);
 
@@ -147,5 +147,4 @@ void reader_finalize() {
   adios_read_finalize_method(s_method);
     
 }
-
 

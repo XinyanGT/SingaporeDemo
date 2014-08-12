@@ -19,8 +19,7 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(comm, &rank);
 
   // Decompose by processes, to read different portions of data
-  decomp_t *rdp;
-  rdp = reader_init(filename, varname, ADIOS_READ_METHOD_BP, row_nprocs, col_nprocs);  // for reader
+  reader_init(filename, varname, ADIOS_READ_METHOD_BP, row_nprocs, col_nprocs);  // for reader
 
   int row, col;
   int lrow, lcol, orow, ocol;
@@ -30,11 +29,11 @@ int main(int argc, char **argv) {
   printf("[%d]L: %d X %d, O: %d, %d\n", rank, lrow, lcol, orow, ocol);  
 
   // Further decompose by chunks, for computing max and min to index
-  decomp_t *idp;
-  retriever_t *rp;
+  DECOMP *idp;
+  RETRIEVER *rp;
 
-  idp = decomp_init(lrow, lcol, row_nchunks, col_nchunks);   // for index
-  rp = retriever_init(idp, period);
+  idp = decomp_new(lrow, lcol, row_nchunks, col_nchunks);   // for index
+  rp = retriever_new(idp, period);
   
   float *data = (float *) malloc(lrow * lcol * sizeof(float));
   float *chunk = (float *) malloc(idp->max_chunksize * period * sizeof(float));
@@ -62,8 +61,8 @@ int main(int argc, char **argv) {
   free(chunk);
   free(data);
   reader_finalize();
-  decomp_finalize(idp);
-  retriever_finalize(rp);
+  decomp_free(idp);
+  retriever_free(rp);
   MPI_Finalize();
 
   return 0;

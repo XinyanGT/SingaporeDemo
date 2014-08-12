@@ -42,6 +42,6 @@ int main(int argc, char **argv) {
   singleton_dc = histquan_quantize_singleton(hp, singleton);
   printf("Result: %d\n", singleton_dc);
 
-  histquan_finalize(hp);
+  histquan_free(hp);
   return 0;
 }

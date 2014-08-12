@@ -35,7 +35,7 @@ int main(int argc, char **argv) {
   singleton_dc = quantizer_quantize_singleton(singleton);
   printf("Result: %d\n", singleton_dc);
 
-  quantizer_finalize();
+  quantizer_free();
   return 0;
 
 }

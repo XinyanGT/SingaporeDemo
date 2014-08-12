@@ -112,7 +112,7 @@ void histquan_quantize(HISTQUAN *hp, float *data, int *data_dc, int size) {
   }
 }
 
-void histquan_finalize(HISTQUAN *hp) {
+void histquan_free(HISTQUAN *hp) {
   free(hp->table);
   free(hp);
 }

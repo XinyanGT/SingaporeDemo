@@ -53,11 +53,12 @@ static void yandex_update_minmax(YANDEX *yp) {
 }
 
 
-YANDEX *yandex_new(retriever_t *rp, int nbuckets, int hist_ratio) {
+YANDEX *yandex_new(RETRIEVER *rp, int nbuckets, int hist_ratio) {
 
   YANDEX *yp = (YANDEX *) malloc(sizeof(YANDEX));
   yp->rp = rp;
   yp->dp = rp->dp;
+  yp->verify_data = NULL;
   
   // Allocate space
   int nchunks = yp->dp->nchunks;
@@ -210,12 +211,12 @@ int yandex_verify(YANDEX *yp, float low_bound, float high_bound, int *query_resu
 }
 
 
-void yandex_finalize(YANDEX *yp) {
+void yandex_free(YANDEX *yp) {
   free(yp->verify_data);
   free(yp->chunk_range[0]);
   free(yp->chunk_range_dc[0]);
-  buckets_finalize(yp->bp);
-  histquan_finalize(yp->hp);
+  buckets_free(yp->bp);
+  histquan_free(yp->hp);
   free(yp);
 }
 

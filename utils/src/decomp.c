@@ -1,8 +1,8 @@
 #include "decomp.h"
 
-decomp_t *decomp_init(int row, int col, int row_nchunks, int col_nchunks) {
+DECOMP *decomp_new(int row, int col, int row_nchunks, int col_nchunks) {
   
-  decomp_t *dp = (decomp_t *) malloc(1 * sizeof(decomp_t));
+  DECOMP *dp = (DECOMP *) malloc(1 * sizeof(DECOMP));
   dp->orowg = 0;
   dp->ocolg = 0;
   dp->row = row;
@@ -22,9 +22,9 @@ decomp_t *decomp_init(int row, int col, int row_nchunks, int col_nchunks) {
 }
 
 /*
-decomp_t *decomp_copy(decomp_t *dp) {
-  decompt_t *dp_new = (decomp_t *) malloc(sizeof(decomp_t));
-  memcpy(dp_new, dp, sizeof(decomp_t));
+DECOMP *decomp_copy(DECOMP *dp) {
+  decompt_t *dp_new = (DECOMP *) malloc(sizeof(DECOMP));
+  memcpy(dp_new, dp, sizeof(DECOMP));
   return dp_new;
 }
 */
@@ -33,7 +33,7 @@ decomp_t *decomp_copy(decomp_t *dp) {
 // For example, row = 2400, row_nchunks = 500
 // Then first part (0-99) should have 4 elements, and second part (100-499) should have 5
 // elements, instead of first part(0-498) having 4 elements and second part(499) having 404 elements
-inline void decomp_get_pos(decomp_t *dp, int pos, int *lrow, int *lcol, int *orow, int *ocol) {
+inline void decomp_get_pos(DECOMP *dp, int pos, int *lrow, int *lcol, int *orow, int *ocol) {
   
   // lr: number of rows in this chunk
   // or: row offset
@@ -71,11 +71,11 @@ inline void decomp_get_pos(decomp_t *dp, int pos, int *lrow, int *lcol, int *oro
 }
 
 // Focus on a certain chunk, superchunk of dpB is in the position pos in dpA
-// Generate a new decomp_t dp
-decomp_t *decomp_focus(decomp_t *dpA, int pos, decomp_t *dpB) {
+// Generate a new DECOMP dp
+DECOMP *decomp_focus(DECOMP *dpA, int pos, DECOMP *dpB) {
 
   // Dimension of dp and way to decompose is the same as dpB
-  decomp_t *dp = decomp_init(dpB->row, dpB->col, dpB->row_nchunks, dpB->col_nchunks);
+  DECOMP *dp = decomp_new(dpB->row, dpB->col, dpB->row_nchunks, dpB->col_nchunks);
 
   // Compute new offsets
   int lr, lc, or, oc;
@@ -92,7 +92,7 @@ decomp_t *decomp_focus(decomp_t *dpA, int pos, decomp_t *dpB) {
 }
 
 
-void decomp_finalize(decomp_t *dp) {
+void decomp_free(DECOMP *dp) {
   free(dp);
 }
 

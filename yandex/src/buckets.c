@@ -35,7 +35,7 @@ void buckets_start(BUCKETS *bp) {
   bp->effetive_nelems = 0;
 }
 
-void buckets_finalize(BUCKETS *bp) {
+void buckets_free(BUCKETS *bp) {
   int i;
   for (i = 0; i < bp->nbuckets; i++) {
     free(bp->buckets[i]);

@@ -26,13 +26,13 @@ int main() {
   int result[row * col];
   int count;
   float chunk[period*col*row];
-  decomp_t *dp;
-  retriever_t *rp;
+  DECOMP *dp;
+  RETRIEVER *rp;
   YANDEX *yp;
 
   // Init
-  dp = decomp_init(row, col, row_nchunks, col_nchunks);
-  rp = retriever_init(dp, period);
+  dp = decomp_new(row, col, row_nchunks, col_nchunks);
+  rp = retriever_new(dp, period);
   yp = yandex_new(rp, nbuckets, hist_ratio);
   
   // Start a period
@@ -110,9 +110,9 @@ int main() {
   okflag = yandex_verify(yp, low, high, result, count, &nexact, &nfuzzy, 1, YANDEX_NOT_IN);
   
   
-  decomp_finalize(dp);
-  retriever_finalize(rp);
-  yandex_finalize(yp);
+  decomp_free(dp);
+  retriever_free(rp);
+  yandex_free(yp);
 
   return 0;
 }

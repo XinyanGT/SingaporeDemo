@@ -9,15 +9,16 @@
 #include "adios.h"
 
 static MPI_Comm s_comm = MPI_COMM_WORLD;
+static int buffer_size = 10;
 static int64_t s_adios_group, s_adios_file;
 static int64_t *s_idp;
-static decomp_t *s_dp;
+static DECOMP *s_dp;
 static char s_varname[256];
 static char s_filename[256];
 static int s_first_write = 1;
 static int s_period;
 
-void writer_init(char *filename, char *varname, char *method, decomp_t *dp, int grow, int gcol, int period) {
+void writer_init(char *filename, char *varname, char *method, DECOMP *dp, int grow, int gcol, int period) {
 
   s_period = period;
   
@@ -78,3 +79,4 @@ void writer_finalize() {
   MPI_Comm_rank(s_comm, &rank);
   adios_finalize(rank);
 }
+

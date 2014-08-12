@@ -7,59 +7,89 @@
 using namespace cv;
 using namespace std;
 
-static Mat s_img;
-static Mat s_img_gs;
-static Mat s_img_gs_trans;
-static Mat s_thresh1, s_thresh2, s_thresh;
-static int s_size;
-static float s_scale_high;
-static float s_scale_low;
-static int s_thresh_high;
-static int s_thresh_low;
-static string s_winname = "Image";
+class VIZCPP {
+private:
+  Mat img;
+  Mat img_gs;
+  Mat img_gs_trans;
+  Mat thresh1, thresh2, thresh;
+  int size;
+  float scale_high;
+  float scale_low;
+  int thresh_high;
+  int thresh_low;
+  string winname;
 
-void viz_init(int row, int col, float scale_high, float scale_low, int thresh_high, int thresh_low) {
-  s_img = Mat::zeros(row, col, CV_32FC1);
-  s_size = row * col;
-  s_scale_high = scale_high;
-  s_scale_low = scale_low;
-  s_thresh_high = thresh_high;
-  s_thresh_low = thresh_low;
+public:
+  VIZCPP(int row, int col, float sh, float sl, int th, int tl);
+  void viz(float *data);
+  
+};
+
+
+VIZCPP::VIZCPP(int row, int col, float sh, float sl, int th, int tl) {
+  img = Mat::zeros(row, col, CV_32FC1);
+  size = row * col;
+  scale_high = sh;
+  scale_low = sl;
+  thresh_high = th;
+  thresh_low = tl;
+  winname = "Image";
 }
 
-
-void viz_viz(float *data) {
+void VIZCPP::viz(float *data) {
 
   // Copy data to matrix
-  assert(s_img.isContinuous());
-  memcpy(s_img.data, data, s_size*sizeof(float));
+  assert(img.isContinuous());
+  memcpy(img.data, data, size*sizeof(float));
 
-  imshow("raw image", s_img);
-  printf("Image: %d x %d\n", s_img.rows, s_img.cols);
+  // imshow("raw image", img);
+  printf("Image: %d x %d\n", img.rows, img.cols);
   
   // Convert image to grayscale
-  s_img.convertTo(s_img_gs, CV_8UC1, 255.0/(s_scale_high-s_scale_low), -255.0/(s_scale_high-s_scale_low)*s_scale_low);
-  imshow("grayscale", s_img_gs);
+  img.convertTo(img_gs, CV_8UC1, 255.0/(scale_high-scale_low), -255.0/(scale_high-scale_low)*scale_low);
+  // imshow("grayscale", img_gs);
 
   // Threshold image to get edges
   // Set high and low values to 255, others to 0
-  threshold(s_img_gs, s_thresh1, s_thresh_high, 255, THRESH_BINARY);
-  threshold(s_img_gs, s_thresh2, s_thresh_low, 255, THRESH_BINARY_INV);
-  s_thresh = s_thresh1 + s_thresh2;
-  imshow("thresh", s_thresh);
+  threshold(img_gs, thresh1, thresh_high, 255, THRESH_BINARY);
+  threshold(img_gs, thresh2, thresh_low, 255, THRESH_BINARY_INV);
+  thresh = thresh1 + thresh2;
+  // imshow("thresh", thresh);
   
   // Get contours
   vector<vector<Point> > contours;
-  findContours(s_thresh, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
-  applyColorMap(s_img_gs, s_img_gs, COLORMAP_JET);
-  drawContours(s_img_gs, contours, -1, Scalar(255, 255, 255), 2);
+  findContours(thresh, contours, CV_RETR_LIST, CV_CHAIN_APPROX_SIMPLE);
+  applyColorMap(img_gs, img_gs, COLORMAP_JET);
+  drawContours(img_gs, contours, -1, Scalar(255, 255, 255), 2);
 
-  transpose(s_img_gs, s_img_gs_trans);
-  imshow(s_winname, s_img_gs_trans);
+  transpose(img_gs, img_gs_trans);
+  imshow(winname, img_gs_trans);
 
   waitKey(0);
+}
+
+
+/************************************************************
+ * C interface
+ ************************************************************/
+VIZ *viz_new(int row, int col, float scale_high, float scale_low, int thresh_high, int thresh_low) {
+  VIZCPP *vizcpp_p = new VIZCPP(row, col, scale_high, scale_low, thresh_high, thresh_low);
+  VIZ *viz_p = (VIZ *) malloc(sizeof(VIZ));
+  viz_p->cpp_p = (void *)vizcpp_p;
+  return viz_p;
+}
+
+void viz_viz(VIZ *viz_p, float *data) {
+  VIZCPP *vizcpp_p = (VIZCPP *)(viz_p->cpp_p);
+  vizcpp_p->viz(data);
+}
+
+void viz_free(VIZ *viz_p) {
+  VIZCPP *vizcpp_p = (VIZCPP *) (viz_p->cpp_p);
+  delete vizcpp_p;
+  free(viz_p);
 }
   
   
 
-  

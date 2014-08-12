@@ -27,7 +27,7 @@ void buckets_extract_not_in(BUCKETS *bp, int low, int high, int *result, int *co
 
 void buckets_extract(BUCKETS *bp, int ranges[][2], int nranges, int *result, int *count);
 
-void buckets_finalize(BUCKETS *bp);
+void buckets_free(BUCKETS *bp);
 
 void buckets_print(BUCKETS *bp);
 

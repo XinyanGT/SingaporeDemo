@@ -4,9 +4,11 @@
 
 int main() {
 
-  int row = 256, col = 768;
-  viz_init(row, col, 0.6, -0.6, 200, 50);
-  
+  int row = 20, col = 60;
+  VIZ *vp;
+  vp = viz_new(row, col, 0.6, -0.6, 200, 50);
+
+  // Generate random data
   float data[row * col];
   int i,j;
   srand(time(NULL));
@@ -17,7 +19,11 @@ int main() {
     }
   }
 
-  viz_viz(data);
+  // Visualize
+  viz_viz(vp, data);
+
+  // Free
+  viz_free(vp);
   
   return 0;
 
