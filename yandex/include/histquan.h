@@ -5,7 +5,7 @@
 
 typedef struct HISTQUAN {
   int level;  // quantization level
-  int ratio;  // finess of the histgram
+  int ratio;  // finess of the histogram
   int *table;
   int table_size;  // number of elements in the table = level * number of bins in the hist
   float max, min; 

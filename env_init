@@ -1,0 +1,16 @@
+# To compile code in sith, the following commands need to run:
+
+# The locate where you installed opencv
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ccs/home/voidp/Software/opencv/lib
+
+# load mxml
+module unload mxml
+module load mxml
+
+# switch compiler
+module unload PE-pgi
+module load PE-gnu
+
+# load adios
+module unload adios
+module load adios/1.7.0

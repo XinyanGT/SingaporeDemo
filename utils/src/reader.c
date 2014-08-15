@@ -80,7 +80,6 @@ DECOMP *reader_init(char *filename, char *varname, enum ADIOS_READ_METHOD method
 }
 
 // Get global dimension
-// Number logical steps
 void reader_get_dim(int *row, int *col) {
   *row = s_row; 
   *col = s_col;

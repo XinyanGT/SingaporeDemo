@@ -12,13 +12,12 @@ import subprocess, os, sys
 Things need to be defined in each module
   1.Variables:
     tryNum: run times for each configuration
-    confs: list of configurations, and each configuration is a list of parameters
+    confs: list of configurations, and each configuration is a list of parameters. What's more, each parameter should be a string
   2.Routines
-    prepare(conf): prepare run with a configuration
-    getComandLine(conf): return command to execute for one configuration
-    getTime: extract information from stdout and stderr after the command run
-    getAnci: get ancillary statistics from the command run. Must return [] if nothing to return
-   
+    prepare(conf): prepare run given a configuration
+    getComandLine(conf): return the command to execute given a configuration
+    getTime: indicates how to extract information from stdout and stderr after the command run
+    getAnci: get ancillary statistics from the command run. Must return [] if nothing to return   
 """
 def profile(mod, recordFile):
     pt  = __import__(mod, globals, locals(), ['*'], -1)  # dynamically import the module

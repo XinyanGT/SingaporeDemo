@@ -32,7 +32,7 @@ void buckets_start(BUCKETS *bp) {
   for (i = 0; i < bp->nbuckets; i++) {
     bp->bucket_nelems[i] = 0;
   }
-  bp->effetive_nelems = 0;
+  bp->effective_nelems = 0;
 }
 
 void buckets_free(BUCKETS *bp) {
@@ -80,7 +80,7 @@ void buckets_fill_range(BUCKETS *bp, int *max, int *min, int size) {
     }
   }
 
-  bp->effetive_nelems += size;
+  bp->effective_nelems += size;
   
 }
 
@@ -207,8 +207,8 @@ void buckets_extract(BUCKETS *bp, int ranges[][2], int nranges, int *result, int
     n = 0;
     for (i = low; i <= high; i++) {
       n += bp->bucket_nelems[i];
-      if (n >= bp->effetive_nelems) {
-	n = bp->effetive_nelems;
+      if (n >= bp->effective_nelems) {
+	n = bp->effective_nelems;
 	break;
       }
     }

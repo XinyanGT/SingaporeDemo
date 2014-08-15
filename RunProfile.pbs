@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -A CSC025
+#PBS -l walltime=17:00:00
+#PBS -l nodes=1:ppn=1
+
+cd /ccs/home/voidp/singapore
+module swap PE-pgi PE-gnu
+module unload adios
+module load adios/1.7.0
+
+# location of opencv
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/ccs/home/voidp/Software/opencv/lib
+
+python ./profile/auto.py producer perf
+
+# Single run
+# ~/singapore/app/exe/gen ~/singapore/data/ECEI.norm.bp voltage2 1 1 32 96 100 100 100 10 -0.06 0.06
+

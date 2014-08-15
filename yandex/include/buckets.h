@@ -9,7 +9,7 @@ typedef struct BUCKETS {
   int **buckets;
   int *bucket_nelems;  // current number of elements in each bucket
   int *bucket_size;    // the maximal number of elements each bucket can hold
-  int effetive_nelems;
+  int effective_nelems;
   int *u;   // used in bucketextract
   int *v;
 } BUCKETS;
