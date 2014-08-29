@@ -38,24 +38,23 @@ VIZCPP::VIZCPP(int row, int col, float sh, float sl, int th, int tl) {
 }
 
 void VIZCPP::viz(float *data) {
-
   // Copy data to matrix
   assert(img.isContinuous());
   memcpy(img.data, data, size*sizeof(float));
 
-  // imshow("raw image", img);
+  imshow("raw image", img);
   printf("Image: %d x %d\n", img.rows, img.cols);
   
   // Convert image to grayscale
   img.convertTo(img_gs, CV_8UC1, 255.0/(scale_high-scale_low), -255.0/(scale_high-scale_low)*scale_low);
-  // imshow("grayscale", img_gs);
+  imshow("grayscale", img_gs);
 
   // Threshold image to get edges
   // Set high and low values to 255, others to 0
   threshold(img_gs, thresh1, thresh_high, 255, THRESH_BINARY);
   threshold(img_gs, thresh2, thresh_low, 255, THRESH_BINARY_INV);
   thresh = thresh1 + thresh2;
-  // imshow("thresh", thresh);
+  imshow("thresh", thresh);
   
   // Get contours
   vector<vector<Point> > contours;

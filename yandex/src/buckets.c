@@ -18,6 +18,8 @@ BUCKETS *buckets_new(int nbuckets) {
   bp->bucket_nelems = (int *) calloc(nbuckets, sizeof(int));
   bp->bucket_size = (int *) malloc(nbuckets * sizeof(int));
   bp->buckets = (int **) malloc(nbuckets * sizeof(int*));
+  bp->u = NULL;
+  bp->v = NULL;
 
   int i;
   for (i = 0; i < nbuckets; i++) {

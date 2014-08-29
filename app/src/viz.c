@@ -10,8 +10,8 @@ int main(int argc, char **argv) {
   char *varname = argv[2];           // name of the variable to read
   int steps = atoi(argv[3]);         // number of steps to read
   int row_nprocs = 1, col_nprocs = 1;
-  float scale_high = 0.2;
-  float scale_low = -0.2;
+  float scale_high = 0.92;
+  float scale_low = 0.62;
   int thresh_high = 160;
   int thresh_low = 70;
 
@@ -37,9 +37,17 @@ int main(int argc, char **argv) {
 
   // Deal with data step by step
   int i = 0;
+  float mid = (scale_high + scale_low) / 2;
   while (i < steps || steps < 0) {
     // Read data
     reader_read(data);
+    for (i = 0; i < lrow * lcol; i++) {
+      if ( (data[i] == 0 ) ||
+	   (0 < data[i] && data[i] < 0.00001) ||
+	   (data[i] < 0 && data[i] > -0.00001) ) {
+	data[i] = mid;
+      }
+    }
     viz_viz(vp, data);
     i++;
   }
