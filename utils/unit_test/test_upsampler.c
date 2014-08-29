@@ -26,7 +26,7 @@ int main() {
   double *I2 = (double *) malloc(dimy2 * dimx2 * sizeof(double));
   upsampler_upsample(dimy, dimx, I, scale, dimy2, dimx2, I2);
 
-  int i, j;
+  /* int i, j; */
   printf("=======================================================\n");
   printf("Before upsampling: \n");
   print_data(I, dimy, dimx);
@@ -35,6 +35,6 @@ int main() {
   printf("After upsampling: \n");
   print_data(I2, dimy2, dimx2);
 	 
-
+  return 0;
   
 }

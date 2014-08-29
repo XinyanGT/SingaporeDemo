@@ -53,25 +53,32 @@ static void yandex_update_minmax(YANDEX *yp) {
 }
 
 
-YANDEX *yandex_new(RETRIEVER *rp, int nbuckets, int hist_ratio) {
+YANDEX *yandex_new(RETRIEVER *rp, int nbuckets, int hist_ratio, FILE *f) {
 
   YANDEX *yp = (YANDEX *) malloc(sizeof(YANDEX));
   yp->rp = rp;
   yp->dp = rp->dp;
   yp->verify_data = NULL;
+  yp->chunk_range[0] = NULL;
+  yp->chunk_range_dc[0] = NULL;
+  yp->chunk_min = NULL;
+  yp->chunk_max = NULL;
+  yp->file = f;
   
   // Allocate space
-  int nchunks = yp->dp->nchunks;
-  yp->chunk_min = (float *) malloc(nchunks * sizeof(float));
-  yp->chunk_max = (float *) malloc(nchunks * sizeof(float));
-  float *dtemp  = (float *) malloc(2 * nchunks * sizeof(float));
-  yp->chunk_range[MIN] = dtemp + nchunks*MIN;
-  yp->chunk_range[MAX] = dtemp + nchunks*MAX;
+  if (!yp->file) {
+    int nchunks = yp->dp->nchunks;
+    yp->chunk_min = (float *) malloc(nchunks * sizeof(float));
+    yp->chunk_max = (float *) malloc(nchunks * sizeof(float));
+    float *dtemp  = (float *) malloc(2 * nchunks * sizeof(float));
+    yp->chunk_range[MIN] = dtemp + nchunks*MIN;
+    yp->chunk_range[MAX] = dtemp + nchunks*MAX;
 
-  int *utemp = (int *) malloc(2 * nchunks * sizeof(int));
-  yp->chunk_range_dc[MAX] = utemp + nchunks*MAX;
-  yp->chunk_range_dc[MIN] = utemp + nchunks*MIN;
-
+    int *utemp = (int *) malloc(2 * nchunks * sizeof(int));
+    yp->chunk_range_dc[MAX] = utemp + nchunks*MAX;
+    yp->chunk_range_dc[MIN] = utemp + nchunks*MIN;
+  }
+  
   // Init buckets
   yp->bp = buckets_new(nbuckets);
 
@@ -84,6 +91,8 @@ YANDEX *yandex_new(RETRIEVER *rp, int nbuckets, int hist_ratio) {
 
 // Start a new period indexing
 void yandex_start(YANDEX *yp) {
+  if (yp->file) return;
+  
   yp->first_step = 1;
   // Restart buckets
   buckets_start(yp->bp);
@@ -92,14 +101,27 @@ void yandex_start(YANDEX *yp) {
 
 // End of a period, build index
 void yandex_stop(YANDEX *yp) {
+  
+  if (!yp->file) {
     int nchunks = yp->dp->nchunks;
     histquan_restart(yp->hp, yp->chunk_range[0], nchunks*2);
     histquan_quantize(yp->hp, yp->chunk_range[0], yp->chunk_range_dc[0], nchunks*2);
     buckets_fill_range(yp->bp, yp->chunk_range_dc[MAX], yp->chunk_range_dc[MIN], nchunks);
+  } else {
+    
+    // Update buckets and quantizer by reading from a file
+    // quantizer
+    histquan_load(yp->hp, yp->file);
+    // buckets
+    buckets_load(yp->bp, yp->file);
+
+  }
 }
 
 void yandex_update(YANDEX *yp) {
 
+  if (yp->file) return;
+  
   // Get min max for this step
   float *I = retriever_get_laststep(yp->rp);
   yandex_shrunk(yp, I);
@@ -215,9 +237,19 @@ void yandex_free(YANDEX *yp) {
   free(yp->verify_data);
   free(yp->chunk_range[0]);
   free(yp->chunk_range_dc[0]);
+  free(yp->chunk_max);
+  free(yp->chunk_min);
   buckets_free(yp->bp);
   histquan_free(yp->hp);
   free(yp);
 }
 
  
+void yandex_save(YANDEX *yp, FILE *f) {
+  // Save quantizer
+  histquan_save(yp->hp, f);
+    
+  // Save buckets
+  buckets_save(yp->bp, f);
+
+}

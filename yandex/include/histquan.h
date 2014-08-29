@@ -21,6 +21,10 @@ int histquan_quantize_singleton(HISTQUAN *hp, float ct);
 
 void histquan_quantize(HISTQUAN *hp, float *ct, int *data_dc, int size);
 
+void histquan_load(HISTQUAN *hp, FILE *f);
+
+void histquan_save(HISTQUAN *hp, FILE *f);
+
 void histquan_free(HISTQUAN *hp);
 		      
 #endif

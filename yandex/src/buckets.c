@@ -255,3 +255,33 @@ void buckets_print(BUCKETS *bp) {
   }
 }
 
+void buckets_save(BUCKETS *bp, FILE *f) {
+  int i;
+  fwrite(&bp->effective_nelems, sizeof(int), 1, f);
+  fwrite(bp->bucket_size, sizeof(int), bp->nbuckets, f);
+  fwrite(bp->bucket_nelems, sizeof(int), bp->nbuckets, f);
+  for (i = 0; i < bp->nbuckets; i++) {
+    fwrite(bp->buckets[i], sizeof(int), bp->bucket_nelems[i], f);
+  }
+}
+
+void buckets_load(BUCKETS *bp, FILE *f) {
+  int i;
+  static int *bucket_size = NULL;
+  fread(&bp->effective_nelems, sizeof(int), 1, f);
+  
+  if (!bucket_size)
+    bucket_size = (int *) malloc(sizeof(int) * bp->nbuckets);
+  fread(bucket_size, sizeof(int), bp->nbuckets, f);
+  for (i = 0; i < bp->nbuckets; i++) {
+    if (bp->bucket_size[i] < bucket_size[i]) {
+      bp->bucket_size[i] = bucket_size[i];
+      bp->buckets[i] = (int *)realloc(bp->buckets[i], bp->bucket_size[i] * sizeof(int));
+    }
+  }
+  
+  fread(bp->bucket_nelems, sizeof(int), bp->nbuckets, f);
+  for (i = 0; i < bp->nbuckets; i++) {
+    fread(bp->buckets[i], sizeof(int), bp->bucket_nelems[i], f);
+  }
+}

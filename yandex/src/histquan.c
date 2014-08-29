@@ -117,4 +117,19 @@ void histquan_free(HISTQUAN *hp) {
   free(hp);
 }
 
-					   
+
+void histquan_load(HISTQUAN *hp, FILE *f) {
+  fread(&hp->max, sizeof(float), 1, f);
+  fread(&hp->min, sizeof(float), 1, f);
+  fread(&hp->interval, sizeof(float), 1, f);
+  fread(hp->table, sizeof(int), hp->table_size, f);
+}
+
+void histquan_save(HISTQUAN *hp, FILE *f) {
+  fwrite(&hp->max, sizeof(float), 1, f);
+  fwrite(&hp->min, sizeof(float), 1, f);
+  fwrite(&hp->interval, sizeof(float), 1, f);
+  fwrite(hp->table, sizeof(int), hp->table_size, f);
+}
+
+

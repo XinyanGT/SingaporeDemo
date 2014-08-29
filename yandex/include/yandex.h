@@ -23,16 +23,18 @@ typedef struct YANDEX {
   DECOMP *dp;
   int first_step;
   float *verify_data;
+  FILE *file;
 } YANDEX;
 
 
-YANDEX *yandex_new(RETRIEVER *rp, int nbuckets, int hist_ratio);
+YANDEX *yandex_new(RETRIEVER *rp, int nbuckets, int hist_ratio, FILE *f);
 void yandex_start(YANDEX *yp);
 void yandex_update(YANDEX *yp);
 void yandex_stop(YANDEX *yp);
 void yandex_query(YANDEX *yp, float low_bound, float high_bound, int *query_result, int *count, yandex_query_type type);
 int yandex_verify(YANDEX *yp, float low_bound, float high_bound, int *query_result, int count, int *nexactp, int *nroughp, int toprint, int type);
 void yandex_free(YANDEX *yp);
+void yandex_save(YANDEX *yp, FILE *f);
 
 
 #endif

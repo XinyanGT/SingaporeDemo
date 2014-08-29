@@ -31,6 +31,10 @@ void buckets_free(BUCKETS *bp);
 
 void buckets_print(BUCKETS *bp);
 
+void buckets_save(BUCKETS *bp, FILE *f);
+
+void buckets_load(BUCKETS *bp, FILE *f);
+
 #endif
 
 

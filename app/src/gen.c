@@ -11,28 +11,114 @@
 #include "reader.h"
 #include "writer.h"
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+typedef struct PARAMS {
+  char filename[256];
+  char varname[256];
+  int row_nprocs;
+  int col_nprocs;
+  int row_nchunks;
+  int col_nchunks;
+  int period;
+  int steps;
+  int nbuckets;
+  int hist_ratio;
+} PARAMS;
+
 int main(int argc, char **argv) {
 
   // Parameters
-  assert(argc > 12);
-  char *filename = argv[1];          // name of the bp file to read 
-  char *varname = argv[2];           // name of the variable to read
-  int row_nprocs = atoi(argv[3]);    // decompose one step of data to processes 
-  int col_nprocs = atoi(argv[4]);
-  int row_nchunks = atoi(argv[5]);   // further decompose, a chunk is a unit to compute min and mx
-  int col_nchunks = atoi(argv[6]);
-  int period = atoi(argv[7]);
-  int steps = atoi(argv[8]);         // number of steps to read
-  int nbuckets = atoi(argv[9]);      // number of buckets
-  int hist_ratio = atoi(argv[10]);         // number of steps to read
-  float low = strtof(argv[11], NULL);    // low bound for query
-  float high = strtof(argv[12], NULL);  // high bound for query
+  char *index_dir = "Index";
+  
+  assert(argc > 13);
+  int mode = atoi(argv[1]);
+  char *filename = argv[2];          // name of the bp file to read 
+  char *varname = argv[3];           // name of the variable to read
+  // mode:
+  //   1 -- generate index and query
+  //   2 -- generate index and save to file
+  //   3 -- read index from file and query
+
+  int row_nprocs = atoi(argv[4]);    // decompose one step of data to processes 
+  int col_nprocs = atoi(argv[5]);
+  int row_nchunks = atoi(argv[6]);   // further decompose, a chunk is a unit to compute min and mx
+  int col_nchunks = atoi(argv[7]);
+  int period = atoi(argv[8]);
+  int steps = atoi(argv[9]);         // number of steps to read
+  int nbuckets = atoi(argv[10]);      // number of buckets
+  int hist_ratio = atoi(argv[11]);         // number of steps to read
+  float low = strtof(argv[12], NULL);    // low bound for query
+  float high = strtof(argv[13], NULL);  // high bound for query
 
   MPI_Comm comm = MPI_COMM_WORLD;
   int rank;
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(comm, &rank);
+  PARAMS params;
+  char meta_filename[256];
+  char index_filename[256];
+  FILE *meta_file, *index_file;
+  char rank_str[256];
+  sprintf(rank_str, "%d", rank);
+  strcpy(meta_filename, index_dir);
+  strcat(meta_filename, "/meta");
+  strcpy(index_filename, index_dir);
+  strcat(index_filename, "/index-");
+  strcat(index_filename, rank_str);  
+    
 
+  // If master process and mode is generating index and saving to local file
+  // write meta information
+  if (rank == 0 && mode == 2) {
+    struct stat st = {0};
+    if (stat(index_dir, &st) == -1) {
+      mkdir(index_dir, 0775);
+    }
+
+    strncpy(params.filename, filename, 256);
+    strncpy(params.varname, varname, 256);
+    params.row_nprocs = row_nprocs;
+    params.col_nprocs = col_nprocs;
+    params.row_nchunks = row_nchunks;
+    params.col_nchunks = col_nchunks;
+    params.period = period;
+    params.steps = steps;
+    params.nbuckets = nbuckets;
+    params.hist_ratio = hist_ratio;
+    meta_file = fopen(meta_filename, "w");
+    fwrite(&params, sizeof(PARAMS), 1, meta_file);
+    fclose(meta_file);
+  }
+
+
+  // mode is reading previous built index and doing query
+  // read parameters from meta file
+  if (mode == 3) {
+    meta_file = fopen(meta_filename, "r");
+    fread(&params, sizeof(PARAMS), 1, meta_file);
+    assert(row_nprocs == params.row_nprocs);
+    assert(col_nprocs == params.col_nprocs);
+    row_nchunks = params.row_nchunks;
+    col_nchunks = params.col_nchunks;
+    period = params.period;
+    steps = params.steps;
+    nbuckets = params.nbuckets;
+    hist_ratio = params.hist_ratio;
+    fclose(meta_file);
+  }
+
+
+  if (mode == 1) {
+    index_file = NULL;
+  } else if (mode == 2) {
+    index_file = fopen(index_filename, "w");
+  } else {
+    index_file = fopen(index_filename, "r");
+  }
+		  
   // Performance
   double read_time = 0;
   double build_time = 0;
@@ -77,7 +163,10 @@ int main(int argc, char **argv) {
   YANDEX *yp;
   
   stimer_start(sp);
-  yp = yandex_new(rp, nbuckets, hist_ratio);
+  if (mode == 3)
+    yp = yandex_new(rp, nbuckets, hist_ratio, index_file);
+  else
+   yp = yandex_new(rp, nbuckets, hist_ratio, NULL);
   stimer_stop(sp);
   build_time += stimer_get_interval(sp);
 
@@ -123,7 +212,7 @@ int main(int argc, char **argv) {
       yandex_stop(yp);
       stimer_stop(sp);
       build_time += stimer_get_interval(sp);
-      
+
       // Query
       stimer_start(sp);
       yandex_query(yp, low, high, result, &count, type);
@@ -137,30 +226,35 @@ int main(int argc, char **argv) {
       total_nrough += nrough;
       total_nexact += nexact;
       assert(okflag);
-      
-      // Write
-      stimer_start(sp);
-      writer_start(result, count);
-      stimer_stop(sp);
-      write_time += stimer_get_interval(sp);
-      
-      for (j = 0; j < count; j++) {
-	stimer_start(sp);
-	retriever_get_chunk(rp, result[j], chunk);
-	stimer_stop(sp);
-	retrieve_time += stimer_get_interval(sp);
 
+
+      if (mode != 2) {
+	// Write
 	stimer_start(sp);
-	writer_write(result[j], chunk);
+	writer_start(result, count);
 	stimer_stop(sp);
 	write_time += stimer_get_interval(sp);
-	
-      }
+      
+	for (j = 0; j < count; j++) {
+	  stimer_start(sp);
+	  retriever_get_chunk(rp, result[j], chunk);
+	  stimer_stop(sp);
+	  retrieve_time += stimer_get_interval(sp);
 
-      stimer_start(sp);
-      writer_stop();
-      stimer_stop(sp);
-      write_time += stimer_get_interval(sp);
+	  stimer_start(sp);
+	  writer_write(result[j], chunk);
+	  stimer_stop(sp);
+	  write_time += stimer_get_interval(sp);
+	
+	}
+
+	stimer_start(sp);
+	writer_stop();
+	stimer_stop(sp);
+	write_time += stimer_get_interval(sp);
+      } else {
+	yandex_save(yp, index_file);
+      }
     }
     i++;
   }
@@ -168,6 +262,9 @@ int main(int argc, char **argv) {
   // Clear
   free(chunk);
   free(data);
+
+  if (index_file)
+    fclose(index_file);
 
   stimer_start(sp);
   reader_finalize();

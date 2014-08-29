@@ -132,6 +132,8 @@ void reader_read(float *data) {
   }
   adios_schedule_read(s_file, sel, s_varname, 0, 1, data);
   adios_perform_reads(s_file, 1);
+  // Free the memory used by the selection
+  adios_selection_delete(sel);
   
   s_current_step++; // increment current logical step
   
@@ -144,6 +146,7 @@ void reader_finalize() {
   adios_read_close(s_file);
   MPI_Barrier(s_comm);
   adios_read_finalize_method(s_method);
+
     
 }
 
